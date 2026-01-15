@@ -1,0 +1,53 @@
+{
+    "project": "AI Troubleshooting Agent",
+    "branchName": "ralph/frontend-streamlit",
+    "description": "Frontend interface using Streamlit for the AI Troubleshooting Agent.",
+    "userStories": [
+        {
+            "id": "US-001",
+            "title": "Chat Interface with Streaming",
+            "description": "As a user, I want to type messages and see the agent's response stream in real-time, including internal thoughts.",
+            "acceptanceCriteria": [
+                "Chat input field at the bottom",
+                "Chat history display",
+                "Real-time rendering of markdown responses",
+                "Display 'thought' events in expanders or distinct UI elements",
+                "Display 'routing' events as indicators (e.g., 'Switching to...')",
+                "Typecheck passes",
+                "Verify in browser using dev-browser skill"
+            ],
+            "priority": 1,
+            "passes": false,
+            "notes": ""
+        },
+        {
+            "id": "US-002",
+            "title": "Configuration Management",
+            "description": "As a user, I want to configure the agent settings without editing files.",
+            "acceptanceCriteria": [
+                "Sidebar or separate tab for settings",
+                "Dropdown to select Orchestrator Model (e.g., gpt-4, gpt-3.5)",
+                "Toggle/Select for active Sub-Agents",
+                "Save button that updates the backend configuration",
+                "Typecheck passes",
+                "Verify in browser using dev-browser skill"
+            ],
+            "priority": 2,
+            "passes": false,
+            "notes": ""
+        },
+        {
+            "id": "US-003",
+            "title": "Sub-Agent Visualization",
+            "description": "As a user, I want to see which sub-agent is currently active.",
+            "acceptanceCriteria": [
+                "Visual indicator of active agent in the chat stream",
+                "Typecheck passes",
+                "Verify in browser using dev-browser skill"
+            ],
+            "priority": 3,
+            "passes": false,
+            "notes": ""
+        }
+    ]
+}
