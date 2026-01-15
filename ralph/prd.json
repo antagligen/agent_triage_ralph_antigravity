@@ -68,8 +68,8 @@
                 "Typecheck passes"
             ],
             "priority": 5,
-            "passes": false,
-            "notes": ""
+            "passes": true,
+            "notes": "Verified via test_model_propagation.py; config passed to both Orchestrator and ACI sub-agent."
         }
     ]
 }

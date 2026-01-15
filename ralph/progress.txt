@@ -47,3 +47,12 @@
   - Streamlit's `st.radio` and conditional logic work well for dynamic UI updates.
   - Integration testing with the browser tool is powerful but requires the environment (API keys) to be fully set up for "green" results, though "red" results can still verify the *attempt* was made.
 ---
+
+## 2026-01-15 21:25 - US-005
+- Analyzed `orchestrator.py` and `sub_agents/aci.py`; confirmed both use `get_llm` with config values.
+- Created `tests/test_model_propagation.py` to verify propagation.
+- Tests pass and typecheck (`mypy`) passes.
+- **Learnings:**
+  - The refactor of ACI in US-003 to use `get_llm` made this propagation inherently work.
+  - Unit tests with `patch` are effective for verifying wiring without live API keys.
+---
