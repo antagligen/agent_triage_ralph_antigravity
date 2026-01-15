@@ -30,7 +30,8 @@ def get_orchestrator_node(config: AppConfig):
         )
 
         response = llm.invoke([SystemMessage(content=system_message)] + list(messages))
-        content = response.content.strip()
+        # Cast to str because content can be list in some LC versions/models
+        content = str(response.content).strip()
 
         # Simple routing logic based on LLM output
         # In a real scenario, we might use function calling or structured output for robustness
@@ -64,11 +65,11 @@ def build_graph(config: AppConfig):
     # For now, if the orchestrator routes to them, we just end (or we could add dummy nodes)
     # To make the graph valid, we need to handle the edges.
     
-    def router(state: AgentState) -> Literal["orchestrator", "__end__"]:
+    def router(state: AgentState) -> Literal["orchestrator", "network_specialist", "__end__"]:
         nxt = state.get("next_node")
         if nxt == "network_specialist":
             return "network_specialist"
-        return END
+        return "__end__"
 
     workflow.set_entry_point("orchestrator")
     

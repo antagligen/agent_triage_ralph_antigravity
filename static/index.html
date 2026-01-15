@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ralph Agent Chat</title>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        #chat-history { border: 1px solid #ccc; padding: 10px; height: 400px; overflow-y: scroll; margin-bottom: 10px; }
+        .message { margin-bottom: 10px; padding: 8px; border-radius: 5px; }
+        .user { background-color: #e3f2fd; text-align: right; }
+        .assistant { background-color: #f1f8e9; }
+        .thought { background-color: #fff3e0; font-size: 0.9em; border-left: 3px solid #ff9800; }
+        .routing { background-color: #e1bee7; font-size: 0.9em; font-style: italic; }
+        .error { color: red; }
+    </style>
+</head>
+<body>
+    <h1>Ralph Agent Chat</h1>
+    <div id="chat-history"></div>
+    <div>
+        <input type="text" id="message-input" placeholder="Type your message..." style="width: 70%;">
+        <button onclick="sendMessage()">Send</button>
+    </div>
+
+    <script>
+        async function sendMessage() {
+            const input = document.getElementById('message-input');
+            const history = document.getElementById('chat-history');
+            const message = input.value;
+            if (!message) return;
+
+            // Add user message
+            history.innerHTML += `<div class="message user"><strong>You:</strong> ${message}</div>`;
+            input.value = '';
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ message: message })
+                });
+
+                if (!response.ok) throw new Error('Network response was not ok');
+
+                const reader = response.body.getReader();
+                const decoder = new TextDecoder();
+                let accumulatedData = '';
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+                    
+                    const chunk = decoder.decode(value, { stream: true });
+                    accumulatedData += chunk;
+                    
+                    // Process complete events
+                    const events = accumulatedData.split('\n\n');
+                    accumulatedData = events.pop(); // Keep incomplete chunk
+
+                    for (const eventStr of events) {
+                        if (eventStr.startsWith('event:')) {
+                            const lines = eventStr.split('\n');
+                            const eventType = lines[0].replace('event: ', '').trim();
+                            const dataLine = lines.find(l => l.startsWith('data: '));
+                            
+                            if (dataLine) {
+                                const data = JSON.parse(dataLine.replace('data: ', ''));
+                                
+                                if (eventType === 'thought') {
+                                    history.innerHTML += `<div class="message thought">
+                                        <strong>Use Tool/Thought (${data.node}):</strong><br/>
+                                        <pre>${data.content}</pre>
+                                    </div>`;
+                                } else if (eventType === 'routing') {
+                                    history.innerHTML += `<div class="message routing">
+                                        Routed to: ${data.routing}
+                                    </div>`;
+                                }
+                                // Logic to display the 'final' response is tricky since we treated everything as thoughts.
+                                // For now, we just display everything.
+                            }
+                        }
+                    }
+                    history.scrollTop = history.scrollHeight;
+                }
+            } catch (error) {
+                history.innerHTML += `<div class="message error">Error: ${error.message}</div>`;
+            }
+        }
+    </script>
+</body>
+</html>

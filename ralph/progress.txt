@@ -19,3 +19,12 @@
   - `src` needs `__init__.py` for pytest to correctly resolve imports when running from root.
   - Pydantic models in `config.py` need careful import in `orchestrator.py` (relative vs absolute).
 ---
+## 2026-01-15 - US-004
+- Implemented streaming `/chat` endpoint using Server-Sent Events (SSE).
+- Created `static/index.html` for frontend visualization.
+- Verified with unit tests using `TestClient` and mocks.
+- **Learnings:**
+  - `StreamingResponse` with generator is effective for SSE in FastAPI.
+  - Testing streaming endpoints requires mocking `ChatOpenAI` and handling environment variables.
+  - `TestClient` is preferred over running a real server for CI/verification when credentials are missing.
+---
