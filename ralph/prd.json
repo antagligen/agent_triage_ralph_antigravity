@@ -30,7 +30,7 @@
                 "Verify in browser (simulate API call)"
             ],
             "priority": 2,
-            "passes": false,
+            "passes": true,
             "notes": ""
         },
         {

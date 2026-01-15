@@ -1,5 +1,8 @@
 from fastapi import FastAPI, Depends
 from functools import lru_cache
+from dotenv import load_dotenv
+
+load_dotenv()
 from .config import AppConfig, load_config
 
 app = FastAPI(title="AI Troubleshooting Agent")
@@ -23,6 +26,30 @@ def get_current_config(config: AppConfig = Depends(get_config)):
         "sub_agents_count": len(config.sub_agents),
         "sub_agents": [agent.name for agent in config.sub_agents]
     }
+
+from pydantic import BaseModel
+class ChatRequest(BaseModel):
+    message: str
+
+@app.post("/chat")
+def chat(request: ChatRequest, config: AppConfig = Depends(get_config)):
+    """
+    Process a chat message through the LangGraph orchestrator.
+    """
+    # Import inside function to avoid potential circular import if we move things around later
+    # and to ensure config is fully loaded
+    from .orchestrator import build_graph
+    from langchain_core.messages import HumanMessage
+    
+    app_workflow = build_graph(config)
+    
+    # Run the graph
+    inputs = {"messages": [HumanMessage(content=request.message)]}
+    result = app_workflow.invoke(inputs)
+    
+    # Extract the last message content
+    last_message = result["messages"][-1]
+    return {"response": last_message.content}
 
 if __name__ == "__main__":
     import uvicorn

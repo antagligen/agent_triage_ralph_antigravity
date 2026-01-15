@@ -3,3 +3,7 @@ uvicorn
 pyyaml
 pydantic
 pytest
+langgraph
+langchain-openai
+langchain-core
+python-dotenv
