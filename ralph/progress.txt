@@ -3,28 +3,56 @@
 ## Codebase Patterns
 - One Task = One Chat Session
 - Always check out the correct branch before starting work
-## 2026-01-15 - US-001
-- Implemented FastAPI project structure
-- Added Pydantic-based configuration loader (YAML/JSON)
-- Created initial config.yaml with orchestrator and sub-agent definitions
+- `load_config` is cached with `@lru_cache` to avoid I/O on every request
+- Pydantic models ensure strict typing for the configuration file
+- `src` needs `__init__.py` for pytest to correctly resolve imports
+
+
+## 2026-01-15 20:46 - US-001
+- Added `GOOGLE_API_KEY` to `.env.example`
+- Updated `AppConfig` to support `orchestrator_provider`
+- Added tests for Gemini configuration default loading
 - **Learnings:**
-  - `load_config` is cached with `@lru_cache` to avoid I/O on every request.
-  - Pydantic models ensure strict typing for the configuration file.
+  - Pydantic's `Field(default=...)` is great for backward compatibility.
+  - Using a provider enum/string helps distinguish between models even if the model name string is ambiguous.
+
+## 2026-01-15 20:55 - US-002
+- Implemented `llm_factory.py` with `get_llm`
+- Updated `orchestrator.py` to use `get_llm`
+- Added `langchain-google-genai` to requirements
+- Verified with `test_llm_factory.py` and mypy
+- **Learnings:**
+  - `ChatOpenAI` and `ChatGoogleGenerativeAI` behave slightly differently regarding API key validation during instantiation; need to mock keys for tests.
+  - Adding `__init__.py` to `backend` was necessary for local pytest execution.
 ---
-## 2026-01-15 - US-002
-- Implemented Orchestrator using LangGraph.
-- Added `/chat` endpoint for user interaction.
-- Verified routing logic with unit tests.
+
+## 2026-01-15 21:05 - US-003
+- Updated `ChatRequest` in `main.py` to accept `model_name` and `model_provider`.
+- Modified `/chat` endpoint to override `AppConfig` dynamically.
+- Refactored `aci.py` to use `get_llm` instead of hardcoded `ChatOpenAI`.
+- Added `tests/test_model_override.py` verifying overrides propagate to the factory.
 - **Learnings:**
-  - `src` needs `__init__.py` for pytest to correctly resolve imports when running from root.
-  - Pydantic models in `config.py` need careful import in `orchestrator.py` (relative vs absolute).
+  - `ChatOpenAI` validation triggers early; mocking `get_llm` everywhere is crucial for unit tests without API keys.
+  - Sub-agents were direct-instantiating models, breaking the "Global Model Propagation" goal; refactoring them to use the factory fixes this.
+  - `pathlib` is safer than `StaticFiles(directory="static")` when running from different CWDs.
 ---
-## 2026-01-15 - US-004
-- Implemented streaming `/chat` endpoint using Server-Sent Events (SSE).
-- Created `static/index.html` for frontend visualization.
-- Verified with unit tests using `TestClient` and mocks.
+
+## 2026-01-15 21:11 - US-004
+- Added `st.sidebar` controls for Model Provider (OpenAI/Gemini) and Model Name.
+- Updated `frontend/app.py` to send `model_provider` and `model_name` in API request.
+- Fixed `backend/src/main.py` config loading path issue.
+- Verified in browser: UI updates correctly, backend attempts to use Gemini (confirmed via error log about missing API key).
 - **Learnings:**
-  - `StreamingResponse` with generator is effective for SSE in FastAPI.
-  - Testing streaming endpoints requires mocking `ChatOpenAI` and handling environment variables.
-  - `TestClient` is preferred over running a real server for CI/verification when credentials are missing.
+  - `uvicorn` running from root needs careful handling of relative paths for config loading inside the app.
+  - Streamlit's `st.radio` and conditional logic work well for dynamic UI updates.
+  - Integration testing with the browser tool is powerful but requires the environment (API keys) to be fully set up for "green" results, though "red" results can still verify the *attempt* was made.
+---
+
+## 2026-01-15 21:25 - US-005
+- Analyzed `orchestrator.py` and `sub_agents/aci.py`; confirmed both use `get_llm` with config values.
+- Created `tests/test_model_propagation.py` to verify propagation.
+- Tests pass and typecheck (`mypy`) passes.
+- **Learnings:**
+  - The refactor of ACI in US-003 to use `get_llm` made this propagation inherently work.
+  - Unit tests with `patch` are effective for verifying wiring without live API keys.
 ---
