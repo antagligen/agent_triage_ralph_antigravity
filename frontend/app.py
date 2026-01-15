@@ -40,9 +40,13 @@ def render_header() -> None:
 
 
 def init_session_state() -> None:
-    """Initialize session state variables for chat history."""
+    """Initialize session state variables for chat history and model config."""
     if "messages" not in st.session_state:
         st.session_state.messages = []
+    if "model_provider" not in st.session_state:
+        st.session_state.model_provider = "openai"
+    if "model_name" not in st.session_state:
+        st.session_state.model_name = "gpt-4o"
 
 
 def render_chat_history() -> None:
@@ -93,19 +97,32 @@ def parse_sse_event(event_str: str) -> SSEEvent | None:
         return None
 
 
-def stream_sse_events(message: str) -> Generator[SSEEvent, None, None]:
+def stream_sse_events(
+    message: str,
+    provider: str | None = None,
+    model: str | None = None
+) -> Generator[SSEEvent, None, None]:
     """Stream SSE events from the backend.
     
     Args:
         message: The user's message to send.
+        provider: Optional model provider override (e.g., "openai", "gemini")
+        model: Optional model name override (e.g., "gpt-4o", "gemini-2.0-flash")
         
     Yields:
         SSEEvent objects as they arrive from the backend.
     """
+    # Build request payload with optional model overrides
+    payload: dict[str, str] = {"message": message}
+    if provider:
+        payload["provider"] = provider
+    if model:
+        payload["model"] = model
+    
     try:
         response = requests.post(
             CHAT_ENDPOINT,
-            json={"message": message},
+            json=payload,
             stream=True,
             timeout=120
         )
@@ -184,10 +201,13 @@ def handle_user_input(user_input: str) -> None:
         with response_container:
             response_placeholder = st.empty()
         
-        # Stream and display events
-        for event in stream_sse_events(user_input):
+        # Stream and display events with model config
+        for event in stream_sse_events(
+            user_input,
+            provider=st.session_state.model_provider,
+            model=st.session_state.model_name
+        ):
             if event.event_type == "thought":
-                # Display thought in expander
                 node = event.data.get("node", "unknown")
                 content = event.data.get("content", "")
                 thoughts.append({"node": node, "content": content})
@@ -235,12 +255,84 @@ def handle_user_input(user_input: str) -> None:
     })
 
 
-def render_system_status() -> None:
-    """Render the system status indicators in the sidebar."""
+# Model presets for each provider
+MODEL_PRESETS: dict[str, list[str]] = {
+    "openai": ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"],
+    "gemini": ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"],
+}
+
+
+def render_sidebar() -> None:
+    """Render the sidebar with model configuration and system status."""
     with st.sidebar:
+        st.header("⚙️ Configuration")
+        
+        # Model Provider Selection
+        provider_options = ["openai", "gemini"]
+        current_provider_index = provider_options.index(
+            st.session_state.model_provider
+        ) if st.session_state.model_provider in provider_options else 0
+        
+        selected_provider = st.selectbox(
+            "Model Provider",
+            options=provider_options,
+            index=current_provider_index,
+            help="Select the AI model provider"
+        )
+        # Update session state if changed
+        if selected_provider and selected_provider != st.session_state.model_provider:
+            st.session_state.model_provider = selected_provider
+            # Reset to first preset model for new provider
+            st.session_state.model_name = MODEL_PRESETS.get(
+                selected_provider, ["gpt-4o"]
+            )[0]
+            st.rerun()
+        
+        # Model Name Selection (dropdown with presets + custom option)
+        model_options = MODEL_PRESETS.get(
+            str(st.session_state.model_provider), ["gpt-4o"]
+        )
+        current_model = str(st.session_state.model_name)
+        
+        # Check if current model is in presets, otherwise use custom
+        if current_model in model_options:
+            current_model_index = model_options.index(current_model)
+            use_custom = False
+        else:
+            current_model_index = 0
+            use_custom = True
+        
+        selected_model = st.selectbox(
+            "Model",
+            options=model_options,
+            index=current_model_index,
+            help="Select a model or use custom input below"
+        )
+        
+        # Custom model input
+        custom_model = st.text_input(
+            "Custom Model (optional)",
+            value=current_model if use_custom else "",
+            help="Enter a custom model name to override the dropdown"
+        )
+        
+        # Determine final model name
+        final_model = custom_model.strip() if custom_model.strip() else selected_model
+        if final_model and final_model != st.session_state.model_name:
+            st.session_state.model_name = final_model
+        
+        st.divider()
+        
+        # Display current configuration
+        st.subheader("Current Config")
+        st.caption(f"**Provider:** {st.session_state.model_provider}")
+        st.caption(f"**Model:** {st.session_state.model_name}")
+        
+        st.divider()
+        
+        # System Status
         st.subheader("System Status")
         st.metric("Backend", "Pending", help="Connection to backend API")
-        st.metric("Model", "Not Selected", help="Currently selected AI model")
         st.metric("Sub-Agents", "0 Active", help="Number of active sub-agents")
 
 
@@ -249,7 +341,7 @@ def main() -> None:
     configure_page()
     init_session_state()
     render_header()
-    render_system_status()
+    render_sidebar()
     
     # Render existing chat history
     render_chat_history()
