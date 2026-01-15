@@ -1,0 +1,68 @@
+{
+    "project": "AI Troubleshooting Agent",
+    "branchName": "ralph/ai-troubleshoot-agent",
+    "description": "Backend service for an AI troubleshoot agent using FastAPI and LangGraph with sub-agent orchestration.",
+    "userStories": [
+        {
+            "id": "US-001",
+            "title": "Core API & Configuration Infrastructure",
+            "description": "As a developer, I want a FastAPI service that loads agent configurations from a file so I can adjust behavior without changing code.",
+            "acceptanceCriteria": [
+                "FastAPI project structure created",
+                "Configuration loader implemented (supports YAML/JSON)",
+                "Configuration file defines Orchestrator model & system prompt",
+                "Configuration file defines List of Sub-Agents and their tools",
+                "Typecheck passes"
+            ],
+            "priority": 1,
+            "passes": true,
+            "notes": ""
+        },
+        {
+            "id": "US-002",
+            "title": "Orchestrator Agent with LangGraph",
+            "description": "As a user, I want the system to understand my request and automatically select the correct expert agent.",
+            "acceptanceCriteria": [
+                "Orchestrator implemented as a LangGraph node",
+                "Orchestrator analyzes user input and selects 'Next Node' or responds directly",
+                "Routing logic involves LLM decision making",
+                "Typecheck passes",
+                "Verify in browser (simulate API call)"
+            ],
+            "priority": 2,
+            "passes": false,
+            "notes": ""
+        },
+        {
+            "id": "US-003",
+            "title": "Cisco ACI Troubleshooting Sub-Agent",
+            "description": "As a network engineer, I want a specialized agent that can query and troubleshoot Cisco ACI structures.",
+            "acceptanceCriteria": [
+                "Cisco ACI sub-agent node implemented",
+                "Agent has access to mocked/stubbed ACI tools",
+                "Agent receives context from Orchestrator and returns troubleshooting steps",
+                "Configurable via the main config file",
+                "Typecheck passes"
+            ],
+            "priority": 3,
+            "passes": false,
+            "notes": ""
+        },
+        {
+            "id": "US-004",
+            "title": "Streaming Thoughts and Responses",
+            "description": "As a user, I want to see the 'thoughts' of the agent in real-time to know it wasn't stuck.",
+            "acceptanceCriteria": [
+                "API endpoint returns a StreamingResponse",
+                "Stream includes structured events for thoughts and responses",
+                "Orchestrator routing decisions are streamed",
+                "Sub-agent tool executions/thoughts are streamed",
+                "Typecheck passes",
+                "Verify in browser (simulate API call)"
+            ],
+            "priority": 4,
+            "passes": false,
+            "notes": ""
+        }
+    ]
+}

@@ -1,0 +1,15 @@
+orchestrator_model: "gpt-4-turbo"
+system_prompt: "You are a helpful AI troublehsooting assistant. Route queries to the appropriate expert."
+
+sub_agents:
+  - name: "network_specialist"
+    description: "Troubleshoot network connectivity and ACI issues."
+    tools:
+      - "ping"
+      - "traceroute"
+      - "aci_diag"
+  - name: "system_admin"
+    description: "Check server logs and system health."
+    tools:
+      - "check_disk_space"
+      - "read_logs"

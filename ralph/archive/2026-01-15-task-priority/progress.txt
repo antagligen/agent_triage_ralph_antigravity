@@ -1,0 +1,5 @@
+# Ralph Progress Log
+---
+## Codebase Patterns
+- One Task = One Chat Session
+- Always check out the correct branch before starting work
