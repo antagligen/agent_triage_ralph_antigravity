@@ -36,3 +36,14 @@
   - Sub-agents were direct-instantiating models, breaking the "Global Model Propagation" goal; refactoring them to use the factory fixes this.
   - `pathlib` is safer than `StaticFiles(directory="static")` when running from different CWDs.
 ---
+
+## 2026-01-15 21:11 - US-004
+- Added `st.sidebar` controls for Model Provider (OpenAI/Gemini) and Model Name.
+- Updated `frontend/app.py` to send `model_provider` and `model_name` in API request.
+- Fixed `backend/src/main.py` config loading path issue.
+- Verified in browser: UI updates correctly, backend attempts to use Gemini (confirmed via error log about missing API key).
+- **Learnings:**
+  - `uvicorn` running from root needs careful handling of relative paths for config loading inside the app.
+  - Streamlit's `st.radio` and conditional logic work well for dynamic UI updates.
+  - Integration testing with the browser tool is powerful but requires the environment (API keys) to be fully set up for "green" results, though "red" results can still verify the *attempt* was made.
+---

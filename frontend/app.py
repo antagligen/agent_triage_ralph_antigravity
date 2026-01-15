@@ -22,7 +22,28 @@ if "messages" not in st.session_state:
 # --- Sidebar ---
 with st.sidebar:
     st.header("Settings")
-    st.write("Configuration options will go here (US-002).")
+    
+    # Model Provider Selection
+    provider = st.radio(
+        "Model Provider",
+        ["OpenAI", "Gemini"],
+        index=0
+    )
+    
+    # Model Name Selection based on Provider
+    if provider == "OpenAI":
+        model_options = ["gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"]
+    else:
+        model_options = ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-1.0-pro"]
+        
+    model_name = st.selectbox(
+        "Model Name",
+        model_options,
+        index=0
+    )
+    
+    st.divider()
+    
     if st.button("Clear History"):
         st.session_state.messages = []
         st.rerun()
@@ -53,9 +74,15 @@ if prompt := st.chat_input("How can I help you troubleshoot?"):
         
         try:
             # 3. Call Backend API with Streaming
+            payload = {
+                "message": prompt,
+                "model_provider": provider.lower(),  # Backend expects lowercase
+                "model_name": model_name
+            }
+            
             response = requests.post(
                 API_CHAT_URL, 
-                json={"message": prompt}, 
+                json=payload, 
                 stream=True
             )
             

@@ -10,7 +10,10 @@ app = FastAPI(title="AI Troubleshooting Agent")
 
 @lru_cache()
 def get_config() -> AppConfig:
-    return load_config()
+    # Resolve config path relative to the backend directory
+    base_dir = Path(__file__).resolve().parent.parent
+    config_path = base_dir / "config.yaml"
+    return load_config(str(config_path))
 
 @app.get("/health")
 def health_check():

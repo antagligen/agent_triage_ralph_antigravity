@@ -55,8 +55,8 @@
                 "Verify in browser using dev-browser skill"
             ],
             "priority": 4,
-            "passes": false,
-            "notes": ""
+            "passes": true,
+            "notes": "Verified visually; backend receives override."
         },
         {
             "id": "US-005",
