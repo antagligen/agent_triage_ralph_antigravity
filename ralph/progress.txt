@@ -7,3 +7,21 @@
 - Pydantic models ensure strict typing for the configuration file
 - `src` needs `__init__.py` for pytest to correctly resolve imports
 
+
+## 2026-01-15 20:46 - US-001
+- Added `GOOGLE_API_KEY` to `.env.example`
+- Updated `AppConfig` to support `orchestrator_provider`
+- Added tests for Gemini configuration default loading
+- **Learnings:**
+  - Pydantic's `Field(default=...)` is great for backward compatibility.
+  - Using a provider enum/string helps distinguish between models even if the model name string is ambiguous.
+
+## 2026-01-15 20:55 - US-002
+- Implemented `llm_factory.py` with `get_llm`
+- Updated `orchestrator.py` to use `get_llm`
+- Added `langchain-google-genai` to requirements
+- Verified with `test_llm_factory.py` and mypy
+- **Learnings:**
+  - `ChatOpenAI` and `ChatGoogleGenerativeAI` behave slightly differently regarding API key validation during instantiation; need to mock keys for tests.
+  - Adding `__init__.py` to `backend` was necessary for local pytest execution.
+---

@@ -1,8 +1,8 @@
 from typing import TypedDict, Annotated, Sequence, Literal
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
-from langchain_openai import ChatOpenAI
 from langgraph.graph import StateGraph, END
 from .config import AppConfig
+from .llm_factory import get_llm
 
 class AgentState(TypedDict):
     messages: Sequence[BaseMessage]
@@ -12,7 +12,7 @@ def get_orchestrator_node(config: AppConfig):
     """
     Factory function to create the orchestrator node with the given configuration.
     """
-    llm = ChatOpenAI(model=config.orchestrator_model, temperature=0)
+    llm = get_llm(config.orchestrator_provider, config.orchestrator_model, temperature=0)
 
     def orchestrator_node(state: AgentState):
         messages = state["messages"]
