@@ -65,26 +65,29 @@ def build_graph(config: AppConfig):
     # To make the graph valid, we need to handle the edges.
     
     def router(state: AgentState) -> Literal["orchestrator", "__end__"]:
-        # This is a bit of a simplification. The orchestrator determines the next node.
-        # But in LangGraph, conditional edges usually look at the state.
         nxt = state.get("next_node")
-        if nxt == END or nxt is None:
-            return END
-        
-        # If we had sub-agent nodes, we would return their names here.
-        # Since we don't have them yet, we'll just log it and end (or return END)
-        # For the purpose of this US, we just want to verify routing logic.
+        if nxt == "network_specialist":
+            return "network_specialist"
         return END
 
     workflow.set_entry_point("orchestrator")
     
-    # In a real implementation with sub-agents, we would add them here:
-    # workflow.add_node("network_specialist", network_specialist_node)
+    # Add ACI sub-agent
+    from .sub_agents.aci import get_aci_agent_node
+    aci_node = get_aci_agent_node(config)
+    workflow.add_node("network_specialist", aci_node)
     
     # We add a conditional edge from orchestrator
     workflow.add_conditional_edges(
         "orchestrator",
-        router
+        router,
+        {
+            "network_specialist": "network_specialist",
+            END: END
+        }
     )
+    
+    # Add edge from sub-agent back to END (or orchestrator if we wanted a loop)
+    workflow.add_edge("network_specialist", END)
 
     return workflow.compile()

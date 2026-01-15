@@ -3,6 +3,8 @@ from unittest.mock import MagicMock, patch
 from src.config import AppConfig, SubAgentConfig
 from src.orchestrator import get_orchestrator_node, AgentState
 from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
+from langchain_core.language_models import BaseChatModel
+from langchain_core.outputs import ChatResult, ChatGeneration
 
 @pytest.fixture
 def mock_config():
@@ -44,8 +46,7 @@ def test_orchestrator_responds_directly(mock_config):
         
         result = orchestrator(state)
         
-        # Should route to END (implied by ending execution in node logic for now)
-        # But wait, our logic returns {"next_node": END, ...} for direct response
+        # Should route to END
         from langgraph.graph import END
         assert result["next_node"] == END
         assert result["messages"][0].content == "Hello there"
@@ -65,3 +66,31 @@ def test_orchestrator_unknown_response(mock_config):
         from langgraph.graph import END
         assert result["next_node"] == END
         assert result["messages"][0].content == "I don't know"
+
+class FakeChatModel(BaseChatModel):
+    response: str = "Default response"
+
+    def _generate(self, messages, stop=None, run_manager=None, **kwargs):
+        return ChatResult(generations=[ChatGeneration(message=AIMessage(content=self.response))])
+    
+    def bind_tools(self, tools, **kwargs):
+        return self
+
+    @property
+    def _llm_type(self):
+        return "fake"
+
+def test_integration_routing_network_specialist(mock_config):
+    """Test that the graph (integration level) routes to network_specialist."""
+    
+    mock_llm = FakeChatModel(response="network_specialist")
+
+    with patch("src.orchestrator.ChatOpenAI", return_value=mock_llm), \
+         patch("src.sub_agents.aci.ChatOpenAI", return_value=mock_llm):
+
+        from src.orchestrator import build_graph
+        graph = build_graph(mock_config)
+        
+        result = graph.invoke({"messages": [HumanMessage(content="ACI issue")]})
+        
+        pass
