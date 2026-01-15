@@ -55,3 +55,18 @@
   - Local Streamlit needs `BACKEND_URL=http://localhost:8000` to connect to Docker backend
   - Backend premature connection close is a backend issue, not frontend SSE parsing
 ---
+## 2026-01-15T22:18 - US-005 (Configuration Sidebar - Model Selection)
+- Added `MODEL_PRESETS` dictionary with preset models for OpenAI and Gemini providers
+- Created `render_sidebar()` replacing `render_system_status()` with configuration UI
+- Added Model Provider dropdown (OpenAI, Gemini) with auto-reset on provider change
+- Added Model dropdown with provider-specific presets
+- Added Custom Model text input for manual model overrides
+- Added "Current Config" section showing selected provider and model
+- Updated `init_session_state()` to initialize `model_provider` and `model_name`
+- Updated `stream_sse_events()` to accept `provider` and `model` parameters
+- API payload now includes `provider` and `model` fields
+- Browser verification confirmed all UI elements functional
+- **Learnings:**
+  - `st.rerun()` triggers a page refresh when provider changes to reset model selection
+  - Streamlit selectbox index must be calculated from current session state
+---
