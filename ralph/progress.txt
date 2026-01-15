@@ -21,3 +21,14 @@
   - Streamlit runs on port 8501 by default
   - Use `--server.headless true` for non-interactive mode
 ---
+## 2026-01-15T21:46 - US-002 (Chat Input and History Display)
+- Updated `frontend/app.py` with chat input and history functionality
+- Added `init_session_state()` for `st.session_state.messages` initialization
+- Added `render_chat_history()` using `st.chat_message` for user/assistant messages
+- Added `handle_user_input()` to process and display messages immediately
+- Moved system status to sidebar with `render_system_status()`
+- **Learnings:**
+  - `st.chat_input` always renders at the bottom of the page
+  - `st.chat_message` uses "user" and "assistant" roles for different avatars
+  - Session state persists across Streamlit reruns
+---
