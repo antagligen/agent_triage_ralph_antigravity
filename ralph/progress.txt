@@ -25,3 +25,14 @@
   - `ChatOpenAI` and `ChatGoogleGenerativeAI` behave slightly differently regarding API key validation during instantiation; need to mock keys for tests.
   - Adding `__init__.py` to `backend` was necessary for local pytest execution.
 ---
+
+## 2026-01-15 21:05 - US-003
+- Updated `ChatRequest` in `main.py` to accept `model_name` and `model_provider`.
+- Modified `/chat` endpoint to override `AppConfig` dynamically.
+- Refactored `aci.py` to use `get_llm` instead of hardcoded `ChatOpenAI`.
+- Added `tests/test_model_override.py` verifying overrides propagate to the factory.
+- **Learnings:**
+  - `ChatOpenAI` validation triggers early; mocking `get_llm` everywhere is crucial for unit tests without API keys.
+  - Sub-agents were direct-instantiating models, breaking the "Global Model Propagation" goal; refactoring them to use the factory fixes this.
+  - `pathlib` is safer than `StaticFiles(directory="static")` when running from different CWDs.
+---
