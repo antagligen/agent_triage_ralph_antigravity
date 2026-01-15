@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  backend:
+    build: ./backend
+    container_name: ralph-backend
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend/src:/app/src
+      - ./backend/config.yaml:/app/config.yaml
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    restart: unless-stopped
+
+  frontend:
+    # build: ./frontend  # Uncomment when frontend Dockerfile exists
+    image: python:3.11-slim # Temporary placeholder or use a managed image if implementing properly
+    container_name: ralph-frontend
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    command: echo "Frontend not implemented yet"
+    ports:
+      - "8501:8501"
+    depends_on:
+      - backend

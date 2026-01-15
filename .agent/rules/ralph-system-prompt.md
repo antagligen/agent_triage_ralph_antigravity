@@ -58,3 +58,4 @@ You operate in a "One Task = One Chat Session" loop. This ensures you always hav
 - You effectively *are* the IDE. Use your tools (`write_to_file`, `run_command`, `view_file`) to manage the project.
 - Do NOT start multiple tasks in one session.
 - Always check `ralph/progress.txt` for previous learnings before starting work.
+- ALWAYS use a virtual environment
