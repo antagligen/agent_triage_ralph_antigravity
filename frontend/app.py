@@ -4,6 +4,14 @@ A chat interface for interacting with the AI troubleshooting agent.
 """
 
 import streamlit as st
+import requests
+import json
+from typing import Generator
+import os
+
+# Backend API configuration
+BACKEND_URL = os.environ.get("BACKEND_URL", "http://backend:8000")
+CHAT_ENDPOINT = f"{BACKEND_URL}/chat"
 
 
 def configure_page() -> None:
@@ -36,6 +44,64 @@ def render_chat_history() -> None:
             st.markdown(message["content"])
 
 
+def send_message_to_backend(message: str) -> tuple[bool, str]:
+    """Send a message to the backend API and collect the response.
+    
+    Args:
+        message: The user's message to send.
+        
+    Returns:
+        A tuple of (success: bool, response_content: str).
+        On success, response_content contains collected SSE data.
+        On failure, response_content contains the error message.
+    """
+    try:
+        response = requests.post(
+            CHAT_ENDPOINT,
+            json={"message": message},
+            stream=True,
+            timeout=60
+        )
+        
+        if response.status_code != 200:
+            return False, f"Backend returned status {response.status_code}: {response.text}"
+        
+        # Collect SSE events (US-004 will parse these properly)
+        # For now, just collect all content for display
+        collected_content = []
+        buffer = ""
+        
+        for chunk in response.iter_content(chunk_size=1024, decode_unicode=True):
+            if chunk:
+                buffer += chunk
+                
+                # Parse SSE events (double newline separates events)
+                while "\n\n" in buffer:
+                    event_str, buffer = buffer.split("\n\n", 1)
+                    
+                    # Extract data from event
+                    for line in event_str.split("\n"):
+                        if line.startswith("data: "):
+                            try:
+                                data = json.loads(line[6:])
+                                if "content" in data:
+                                    collected_content.append(data["content"])
+                            except json.JSONDecodeError:
+                                pass
+        
+        if collected_content:
+            return True, "\n\n".join(collected_content)
+        else:
+            return True, "Response received but no content extracted."
+            
+    except requests.exceptions.ConnectionError:
+        return False, "❌ **Connection Error:** Could not connect to the backend. Please ensure the backend service is running."
+    except requests.exceptions.Timeout:
+        return False, "❌ **Timeout:** The backend took too long to respond. Please try again."
+    except requests.exceptions.RequestException as e:
+        return False, f"❌ **Request Error:** {str(e)}"
+
+
 def handle_user_input(user_input: str) -> None:
     """Handle user input and add to chat history.
     
@@ -52,14 +118,20 @@ def handle_user_input(user_input: str) -> None:
     with st.chat_message("user"):
         st.markdown(user_input)
     
-    # Placeholder for assistant response (US-003/US-004 will implement actual API call)
+    # Call the backend API with loading indicator
     with st.chat_message("assistant"):
-        st.info("🔄 Backend integration coming in US-003...")
+        with st.spinner("🔄 Processing your request..."):
+            success, response_content = send_message_to_backend(user_input)
+        
+        if success:
+            st.markdown(response_content)
+        else:
+            st.error(response_content)
     
-    # Add placeholder assistant message to history
+    # Add assistant response to history
     st.session_state.messages.append({
         "role": "assistant",
-        "content": "🔄 Backend integration coming in US-003..."
+        "content": response_content
     })
 
 
