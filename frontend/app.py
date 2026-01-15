@@ -8,10 +8,18 @@ import requests
 import json
 from typing import Generator
 import os
+from dataclasses import dataclass
 
 # Backend API configuration
 BACKEND_URL = os.environ.get("BACKEND_URL", "http://backend:8000")
 CHAT_ENDPOINT = f"{BACKEND_URL}/chat"
+
+
+@dataclass
+class SSEEvent:
+    """Represents a parsed SSE event."""
+    event_type: str  # "thought", "routing", "response"
+    data: dict
 
 
 def configure_page() -> None:
@@ -41,34 +49,74 @@ def render_chat_history() -> None:
     """Render the chat message history."""
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
+            # Render thoughts in an expander if present
+            if "thoughts" in message and message["thoughts"]:
+                with st.expander("💭 Agent Thoughts", expanded=False):
+                    for thought in message["thoughts"]:
+                        node = thought.get("node", "unknown")
+                        content = thought.get("content", "")
+                        st.markdown(f"**{node}:** {content}")
+            # Render routing info if present
+            if "routing" in message and message["routing"]:
+                for route in message["routing"]:
+                    st.info(f"🔀 Switching to: **{route}**")
+            # Render main content
             st.markdown(message["content"])
 
 
-def send_message_to_backend(message: str) -> tuple[bool, str]:
-    """Send a message to the backend API and collect the response.
+def parse_sse_event(event_str: str) -> SSEEvent | None:
+    """Parse a single SSE event string into an SSEEvent object.
+    
+    Args:
+        event_str: Raw SSE event string (may contain 'event:' and 'data:' lines)
+        
+    Returns:
+        SSEEvent object or None if parsing fails
+    """
+    event_type = "message"  # default SSE event type
+    data_str = None
+    
+    for line in event_str.split("\n"):
+        line = line.strip()
+        if line.startswith("event:"):
+            event_type = line[6:].strip()
+        elif line.startswith("data:"):
+            data_str = line[5:].strip()
+    
+    if data_str is None:
+        return None
+    
+    try:
+        data = json.loads(data_str)
+        return SSEEvent(event_type=event_type, data=data)
+    except json.JSONDecodeError:
+        return None
+
+
+def stream_sse_events(message: str) -> Generator[SSEEvent, None, None]:
+    """Stream SSE events from the backend.
     
     Args:
         message: The user's message to send.
         
-    Returns:
-        A tuple of (success: bool, response_content: str).
-        On success, response_content contains collected SSE data.
-        On failure, response_content contains the error message.
+    Yields:
+        SSEEvent objects as they arrive from the backend.
     """
     try:
         response = requests.post(
             CHAT_ENDPOINT,
             json={"message": message},
             stream=True,
-            timeout=60
+            timeout=120
         )
         
         if response.status_code != 200:
-            return False, f"Backend returned status {response.status_code}: {response.text}"
+            yield SSEEvent(
+                event_type="error",
+                data={"content": f"Backend returned status {response.status_code}: {response.text}"}
+            )
+            return
         
-        # Collect SSE events (US-004 will parse these properly)
-        # For now, just collect all content for display
-        collected_content = []
         buffer = ""
         
         for chunk in response.iter_content(chunk_size=1024, decode_unicode=True):
@@ -78,32 +126,29 @@ def send_message_to_backend(message: str) -> tuple[bool, str]:
                 # Parse SSE events (double newline separates events)
                 while "\n\n" in buffer:
                     event_str, buffer = buffer.split("\n\n", 1)
-                    
-                    # Extract data from event
-                    for line in event_str.split("\n"):
-                        if line.startswith("data: "):
-                            try:
-                                data = json.loads(line[6:])
-                                if "content" in data:
-                                    collected_content.append(data["content"])
-                            except json.JSONDecodeError:
-                                pass
-        
-        if collected_content:
-            return True, "\n\n".join(collected_content)
-        else:
-            return True, "Response received but no content extracted."
-            
+                    event = parse_sse_event(event_str)
+                    if event:
+                        yield event
+                        
     except requests.exceptions.ConnectionError:
-        return False, "❌ **Connection Error:** Could not connect to the backend. Please ensure the backend service is running."
+        yield SSEEvent(
+            event_type="error",
+            data={"content": "❌ **Connection Error:** Could not connect to the backend. Please ensure the backend service is running."}
+        )
     except requests.exceptions.Timeout:
-        return False, "❌ **Timeout:** The backend took too long to respond. Please try again."
+        yield SSEEvent(
+            event_type="error",
+            data={"content": "❌ **Timeout:** The backend took too long to respond. Please try again."}
+        )
     except requests.exceptions.RequestException as e:
-        return False, f"❌ **Request Error:** {str(e)}"
+        yield SSEEvent(
+            event_type="error",
+            data={"content": f"❌ **Request Error:** {str(e)}"}
+        )
 
 
 def handle_user_input(user_input: str) -> None:
-    """Handle user input and add to chat history.
+    """Handle user input with real-time SSE streaming display.
     
     Args:
         user_input: The user's message text.
@@ -118,20 +163,75 @@ def handle_user_input(user_input: str) -> None:
     with st.chat_message("user"):
         st.markdown(user_input)
     
-    # Call the backend API with loading indicator
+    # Process streaming response
     with st.chat_message("assistant"):
-        with st.spinner("🔄 Processing your request..."):
-            success, response_content = send_message_to_backend(user_input)
+        # Containers for dynamic content
+        thoughts_container = st.container()
+        routing_container = st.container()
+        response_container = st.container()
         
-        if success:
-            st.markdown(response_content)
-        else:
-            st.error(response_content)
+        # Collect events for history
+        thoughts: list[dict] = []
+        routing_events: list[str] = []
+        response_chunks: list[str] = []
+        error_message: str | None = None
+        
+        # Active expander for thoughts (shown during streaming)
+        with thoughts_container:
+            thoughts_expander = st.expander("💭 Agent Thoughts", expanded=True)
+        
+        # Response placeholder for real-time updates
+        with response_container:
+            response_placeholder = st.empty()
+        
+        # Stream and display events
+        for event in stream_sse_events(user_input):
+            if event.event_type == "thought":
+                # Display thought in expander
+                node = event.data.get("node", "unknown")
+                content = event.data.get("content", "")
+                thoughts.append({"node": node, "content": content})
+                
+                with thoughts_expander:
+                    st.markdown(f"**{node}:** {content}")
+                
+                # Also add to response if it's from orchestrator (final answer)
+                # The backend sends the final response as a 'thought' from orchestrator
+                if node == "orchestrator" or node == "network_specialist":
+                    response_chunks.append(content)
+                    # Update response in real-time
+                    with response_placeholder:
+                        st.markdown("\n\n".join(response_chunks))
+            
+            elif event.event_type == "routing":
+                # Display routing indicator
+                target = event.data.get("routing", "unknown")
+                routing_events.append(target)
+                with routing_container:
+                    st.info(f"🔀 Switching to: **{target}**")
+            
+            elif event.event_type == "response":
+                # Direct response event (if backend sends it)
+                content = event.data.get("content", "")
+                response_chunks.append(content)
+                with response_placeholder:
+                    st.markdown("\n\n".join(response_chunks))
+            
+            elif event.event_type == "error":
+                error_message = event.data.get("content", "Unknown error")
+                st.error(error_message)
+        
+        # If no response chunks but we have thoughts, use the last thought as response
+        final_response = "\n\n".join(response_chunks) if response_chunks else "No response received."
+        if error_message:
+            final_response = error_message
     
-    # Add assistant response to history
+    # Add assistant response to history with thoughts and routing
     st.session_state.messages.append({
         "role": "assistant",
-        "content": response_content
+        "content": final_response,
+        "thoughts": thoughts,
+        "routing": routing_events
     })
 
 
