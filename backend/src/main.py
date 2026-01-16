@@ -49,12 +49,7 @@ if not static_dir.exists():
 
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
-from pydantic import BaseModel
-
-class ChatRequest(BaseModel):
-    message: str
-    model_name: Optional[str] = None
-    model_provider: Optional[str] = None
+from .schemas import ChatRequest
 
 
 
