@@ -1,54 +1,49 @@
 {
-    "project": "AI Troubleshooting Agent",
-    "branchName": "ralph/documentation",
-    "description": "Documentation Overhaul - Comprehensive READMEs for Root, Backend, and Frontend.",
+    "project": "Docker Entrypoint Secret Injection",
+    "branchName": "ralph/docker-entrypoint",
+    "description": "Bridge the gap between Docker Secrets and legacy applications by injecting them as environment variables.",
     "userStories": [
         {
             "id": "US-001",
-            "title": "Root README and Architecture Diagrams",
-            "description": "As a developer, I want a high-level overview of the system so that I understand how the pieces fit together.",
+            "title": "Create Entrypoint Script",
+            "description": "As a DevOps engineer, I want a `bash` entrypoint script that reads files from `/run/secrets/`, exports them as environment variables, and executes the command.",
             "acceptanceCriteria": [
-                "Create `README.md` in the root directory",
-                "Include Project Title 'AI Troubleshooting Agent' and Description",
-                "Include 'Quick Start' section using Docker Compose",
-                "Include a Mermaid diagram showing the high-level data flow (User -> Frontend -> Backend -> Orchestrator -> LLM)",
-                "Include a Mermaid diagram showing the Agentic workflow or Sub-Agent routing logic",
+                "Script uses `#!/bin/bash` interpreter",
+                "Checks if `/run/secrets/` directory exists (warn if missing, read if present)",
+                "Iterates through every file in the secrets directory",
+                "Exports filename as Key and content as Value (with trailing whitespace stripped)",
+                "Executes the passed command using `exec \"$@\"`",
                 "Typecheck passes"
             ],
             "priority": 1,
             "passes": true,
-            "notes": "Completed basic README with diagrams."
+            "notes": ""
         },
         {
             "id": "US-002",
-            "title": "Backend Microservice Documentation",
-            "description": "As a backend developer, I want to understand the API and internals of the backend service so I can extend it.",
+            "title": "Configure Docker Compose Secrets",
+            "description": "As a DevOps engineer, I want to update the `docker-compose.yml` file to define secrets and mount them into the relevant service containers so they are available at runtime.",
             "acceptanceCriteria": [
-                "Create `backend/README.md`",
-                "Document the primary API endpoints (e.g., `/chat`)",
-                "Explain the Configuration system (loading from `config.yaml` / `.env`)",
-                "Explain the LangGraph Orchestrator structure",
-                "Document how to add new tools or sub-agents",
-                "Typecheck passes"
+                "Define a top-level `secrets` block referencing local secret files",
+                "Files referenced in `secrets` block must be explicitly ignored in `.gitignore`",
+                "Update target service definition to include a `secrets` list",
+                "Ensure secret names in `services` match the top-level keys",
+                "Verify container builds and secret files appear in `/run/secrets/` inside the container"
             ],
             "priority": 2,
             "passes": true,
-            "notes": "Created comprehensive backend/README.md covering API, Config, and Architecture."
+            "notes": "Ensure file permissions on host secret files are restricted (e.g., 600)."
         },
         {
             "id": "US-003",
-            "title": "Frontend Microservice Documentation",
-            "description": "As a frontend developer, I want to understand the Streamlit application structure so I can modify the UI.",
+            "title": "Configure Docker Compose Secrets",
+            "description": "Update the readme to include instructions for setting up secrets",
             "acceptanceCriteria": [
-                "Create `frontend/README.md`",
-                "Document the Streamlit app structure (`app.py`)",
-                "Explain the `st.session_state` management strategy",
-                "Explain how SSE (Server-Sent Events) are handled and parsed",
-                "Typecheck passes"
+                "Update the readme to include instructions for setting up secrets"
             ],
             "priority": 3,
             "passes": true,
-            "notes": "Created frontend/README.md with details on app structure, state, and SSE."
+            "notes": ""
         }
     ]
 }

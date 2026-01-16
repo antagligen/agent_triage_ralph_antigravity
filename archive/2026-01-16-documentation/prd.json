@@ -1,0 +1,54 @@
+{
+    "project": "AI Troubleshooting Agent",
+    "branchName": "ralph/documentation",
+    "description": "Documentation Overhaul - Comprehensive READMEs for Root, Backend, and Frontend.",
+    "userStories": [
+        {
+            "id": "US-001",
+            "title": "Root README and Architecture Diagrams",
+            "description": "As a developer, I want a high-level overview of the system so that I understand how the pieces fit together.",
+            "acceptanceCriteria": [
+                "Create `README.md` in the root directory",
+                "Include Project Title 'AI Troubleshooting Agent' and Description",
+                "Include 'Quick Start' section using Docker Compose",
+                "Include a Mermaid diagram showing the high-level data flow (User -> Frontend -> Backend -> Orchestrator -> LLM)",
+                "Include a Mermaid diagram showing the Agentic workflow or Sub-Agent routing logic",
+                "Typecheck passes"
+            ],
+            "priority": 1,
+            "passes": true,
+            "notes": "Completed basic README with diagrams."
+        },
+        {
+            "id": "US-002",
+            "title": "Backend Microservice Documentation",
+            "description": "As a backend developer, I want to understand the API and internals of the backend service so I can extend it.",
+            "acceptanceCriteria": [
+                "Create `backend/README.md`",
+                "Document the primary API endpoints (e.g., `/chat`)",
+                "Explain the Configuration system (loading from `config.yaml` / `.env`)",
+                "Explain the LangGraph Orchestrator structure",
+                "Document how to add new tools or sub-agents",
+                "Typecheck passes"
+            ],
+            "priority": 2,
+            "passes": true,
+            "notes": "Created comprehensive backend/README.md covering API, Config, and Architecture."
+        },
+        {
+            "id": "US-003",
+            "title": "Frontend Microservice Documentation",
+            "description": "As a frontend developer, I want to understand the Streamlit application structure so I can modify the UI.",
+            "acceptanceCriteria": [
+                "Create `frontend/README.md`",
+                "Document the Streamlit app structure (`app.py`)",
+                "Explain the `st.session_state` management strategy",
+                "Explain how SSE (Server-Sent Events) are handled and parsed",
+                "Typecheck passes"
+            ],
+            "priority": 3,
+            "passes": true,
+            "notes": "Created frontend/README.md with details on app structure, state, and SSE."
+        }
+    ]
+}

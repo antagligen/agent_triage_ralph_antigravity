@@ -1,5 +1,11 @@
 version: '3.8'
 
+secrets:
+  backend_api_key:
+    file: ./secrets/backend_api_key.txt
+  frontend_secret:
+    file: ./secrets/frontend_secret.txt
+
 services:
   backend:
     build: ./backend
@@ -11,6 +17,8 @@ services:
       - ./backend/config.yaml:/app/config.yaml
     environment:
       - OPENAI_API_KEY=${OPENAI_API_KEY}
+    secrets:
+      - backend_api_key
     restart: unless-stopped
 
   frontend:
@@ -23,3 +31,5 @@ services:
       - "8501:8501"
     depends_on:
       - backend
+    secrets:
+      - frontend_secret
