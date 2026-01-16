@@ -5,6 +5,7 @@ import os
 
 # --- Configuration ---
 BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
+print(f"Backend URL configured: {BACKEND_URL}")
 API_CHAT_URL = f"{BACKEND_URL}/chat"
 
 st.set_page_config(

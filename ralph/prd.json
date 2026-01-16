@@ -1,16 +1,16 @@
 {
-    "project": "Backend Refactoring",
-    "branchName": "ralph/backend-refactor",
-    "description": "Refactor backend/src/main.py to be lightweight and document the LangGraph logic.",
+    "project": "Frontend Connection Fix",
+    "branchName": "ralph/fix-frontend-connection",
+    "description": "Fix frontend-backend connection in Docker environment by standardizing URL configuration.",
     "userStories": [
         {
             "id": "US-001",
-            "title": "Extract Streaming Logic",
-            "description": "As a developer, I want the SSE streaming logic moved out of main.py into a dedicated module so that main.py remains focused on routing.",
+            "title": "Standardize Backend URL Configuration",
+            "description": "As a developer, I want the frontend to consistently use the BACKEND_URL environment variable so that it can point to http://backend:8000 inside Docker and http://localhost:8000 locally.",
             "acceptanceCriteria": [
-                "Create backend/src/streaming.py",
-                "Move stream_graph_events function to backend/src/streaming.py",
-                "Ensure all necessary imports are present",
+                "Frontend app.py reads BACKEND_URL (defaults to http://localhost:8000 if missing)",
+                "Docker Compose frontend service has BACKEND_URL set to the backend service alias (e.g. http://backend:8000)",
+                "Frontend logs the configured backend URL on startup (for debugging)",
                 "Typecheck passes"
             ],
             "priority": 1,
@@ -19,56 +19,17 @@
         },
         {
             "id": "US-002",
-            "title": "Extract Schemas",
-            "description": "As a developer, I want request/response models in their own module to keep the entrypoint clean.",
+            "title": "Verify Docker Networking",
+            "description": "As a user, I want to be able to chat via the frontend in Docker without connection errors.",
             "acceptanceCriteria": [
-                "Create backend/src/schemas.py",
-                "Move ChatRequest class locally",
-                "Update main.py to import ChatRequest",
-                "Typecheck passes"
+                "docker-compose up starts both services without error",
+                "Sending a message in the frontend results in a streaming response from the backend",
+                "No 'Connection refused' or 'Name resolution' errors in frontend logs",
+                "Typecheck passes",
+                "Verify in browser using dev-browser skill"
             ],
             "priority": 2,
-            "passes": true,
-            "notes": ""
-        },
-        {
-            "id": "US-004",
-            "title": "Add Graph Diagram",
-            "description": "As a developer, I want a Mermaid diagram illustrating the LangGraph decision tree embedded in the code documentation.",
-            "acceptanceCriteria": [
-                "Create Mermaid state diagram for orchestrator flow",
-                "Add diagram to backend/src/orchestrator.py module docstring",
-                "Ensure diagram accurately reflects logic",
-                "Typecheck passes"
-            ],
-            "priority": 4,
-            "passes": true,
-            "notes": ""
-        },
-        {
-            "id": "US-005",
-            "title": "Refactor Main Entrypoint",
-            "description": "As a developer, I want backend/src/main.py to simply compose imports and define routes.",
-            "acceptanceCriteria": [
-                "Refactor /chat endpoint in main.py to use streaming.py and schemas.py",
-                "Ensure config loading logic is clean",
-                "Verify application startup works",
-                "Verify /chat endpoint functions correctly",
-                "Typecheck passes"
-            ],
-            "priority": 3,
-            "passes": true,
-            "notes": "Refactored main.py to be a clean composition root. Mypy and startup verification passed."
-        },
-        {
-            "id": "US-006",
-            "title": "validate all unit tests",
-            "description": "After all refactoring is done, validate all unit tests pass.",
-            "acceptanceCriteria": [
-                "all created unit tests pass"
-            ],
-            "priority": 6,
-            "passes": true,
+            "passes": false,
             "notes": ""
         }
     ]
