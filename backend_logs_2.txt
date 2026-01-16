@@ -1,0 +1,50 @@
+﻿ralph-backend  |     raise exc
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+ralph-backend  |     await self.app(scope, receive, _send)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+ralph-backend  |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+ralph-backend  |     raise exc
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+ralph-backend  |     await app(scope, receive, sender)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+ralph-backend  |     await self.app(scope, receive, send)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+ralph-backend  |     await self.middleware_stack(scope, receive, send)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+ralph-backend  |     await route.handle(scope, receive, send)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+ralph-backend  |     await self.app(scope, receive, send)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 115, in app
+ralph-backend  |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+ralph-backend  |     raise exc
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+ralph-backend  |     await app(scope, receive, sender)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 101, in app
+ralph-backend  |     response = await f(request)
+ralph-backend  |                ^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 355, in app
+ralph-backend  |     raw_response = await run_endpoint_function(
+ralph-backend  |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 243, in run_endpoint_function
+ralph-backend  |     return await dependant.call(**values)
+ralph-backend  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/app/src/main.py", line 80, in chat
+ralph-backend  |     app_workflow = build_graph(config)
+ralph-backend  |                    ^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/app/src/orchestrator.py", line 93, in build_graph
+ralph-backend  |     aci_node = get_aci_agent_node(config)
+ralph-backend  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/app/src/sub_agents/aci.py", line 37, in get_aci_agent_node
+ralph-backend  |     agent = create_react_agent(llm, tools=tools)
+ralph-backend  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/typing_extensions.py", line 3004, in wrapper
+ralph-backend  |     return arg(*args, **kwargs)
+ralph-backend  |            ^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/langgraph/prebuilt/chat_agent_executor.py", line 580, in create_react_agent
+ralph-backend  |     model = cast(BaseChatModel, model).bind_tools(
+ralph-backend  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/langchain_core/language_models/chat_models.py", line 1540, in bind_tools
+ralph-backend  |     raise NotImplementedError
+ralph-backend  | NotImplementedError

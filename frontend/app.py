@@ -20,6 +20,15 @@ st.title("🤖 Ralph - AI Troubleshooting Agent")
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# --- Helper Functions ---
+def check_backend_health():
+    """Checks if the backend is reachable."""
+    try:
+        response = requests.get(f"{BACKEND_URL}/health", timeout=2)
+        return response.status_code == 200
+    except requests.exceptions.RequestException:
+        return False
+
 # --- Sidebar ---
 with st.sidebar:
     st.header("Settings")
@@ -42,6 +51,18 @@ with st.sidebar:
         model_options,
         index=0
     )
+    
+    st.divider()
+
+    st.header("Connection Status")
+    if st.button("Refresh Status"):
+        st.rerun()
+
+    is_online = check_backend_health()
+    if is_online:
+        st.success("🟢 Backend Online")
+    else:
+        st.error("🔴 Backend Offline")
     
     st.divider()
     

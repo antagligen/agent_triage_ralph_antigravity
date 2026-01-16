@@ -1,0 +1,218 @@
+﻿ralph-backend  | INFO:     Started server process [1]
+ralph-backend  | INFO:     Waiting for application startup.
+ralph-backend  | INFO:     Application startup complete.
+ralph-backend  | INFO:     Uvicorn running on http://0.0.0.0:8000 (Press CTRL+C to quit)
+ralph-backend  | INFO:     172.20.0.3:39802 - "POST /chat HTTP/1.1" 200 OK
+ralph-backend  | ERROR:    Exception in ASGI application
+ralph-backend  | Traceback (most recent call last):
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/protocols/http/h11_impl.py", line 410, in run_asgi
+ralph-backend  |     result = await app(  # type: ignore[func-returns-value]
+ralph-backend  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+ralph-backend  |     return await self.app(scope, receive, send)
+ralph-backend  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/fastapi/applications.py", line 1135, in __call__
+ralph-backend  |     await super().__call__(scope, receive, send)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/applications.py", line 107, in __call__
+ralph-backend  |     await self.middleware_stack(scope, receive, send)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+ralph-backend  |     raise exc
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+ralph-backend  |     await self.app(scope, receive, _send)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+ralph-backend  |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+ralph-backend  |     raise exc
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+ralph-backend  |     await app(scope, receive, sender)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+ralph-backend  |     await self.app(scope, receive, send)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+ralph-backend  |     await self.middleware_stack(scope, receive, send)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+ralph-backend  |     await route.handle(scope, receive, send)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+ralph-backend  |     await self.app(scope, receive, send)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 115, in app
+ralph-backend  |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+ralph-backend  |     raise exc
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+ralph-backend  |     await app(scope, receive, sender)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 102, in app
+ralph-backend  |     await response(scope, receive, send)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/responses.py", line 269, in __call__
+ralph-backend  |     with collapse_excgroups():
+ralph-backend  |   File "/usr/local/lib/python3.11/contextlib.py", line 158, in __exit__
+ralph-backend  |     self.gen.throw(typ, value, traceback)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+ralph-backend  |     raise exc
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/responses.py", line 273, in wrap
+ralph-backend  |     await func()
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/responses.py", line 253, in stream_response
+ralph-backend  |     async for chunk in self.body_iterator:
+ralph-backend  |   File "/app/src/streaming.py", line 10, in stream_graph_events
+ralph-backend  |     async for event in workflow.astream(inputs, stream_mode="updates"):
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/langgraph/pregel/main.py", line 2974, in astream
+ralph-backend  |     async for _ in runner.atick(
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/langgraph/pregel/_runner.py", line 304, in atick
+ralph-backend  |     await arun_with_retry(
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/langgraph/pregel/_retry.py", line 138, in arun_with_retry
+ralph-backend  |     return await task.proc.ainvoke(task.input, config)
+ralph-backend  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/langgraph/_internal/_runnable.py", line 705, in ainvoke
+ralph-backend  |     input = await asyncio.create_task(
+ralph-backend  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/langgraph/_internal/_runnable.py", line 473, in ainvoke
+ralph-backend  |     ret = await self.afunc(*args, **kwargs)
+ralph-backend  |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/langchain_core/runnables/config.py", line 610, in run_in_executor
+ralph-backend  |     return await asyncio.get_running_loop().run_in_executor(
+ralph-backend  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 58, in run
+ralph-backend  |     result = self.fn(*self.args, **self.kwargs)
+ralph-backend  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/langchain_core/runnables/config.py", line 601, in wrapper
+ralph-backend  |     return func(*args, **kwargs)
+ralph-backend  |            ^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/app/src/orchestrator.py", line 47, in orchestrator_node
+ralph-backend  |     response = llm.invoke([SystemMessage(content=system_message)] + list(messages))
+ralph-backend  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/langchain_core/language_models/chat_models.py", line 402, in invoke
+ralph-backend  |     self.generate_prompt(
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/langchain_core/language_models/chat_models.py", line 1121, in generate_prompt
+ralph-backend  |     return self.generate(prompt_messages, stop=stop, callbacks=callbacks, **kwargs)
+ralph-backend  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/langchain_core/language_models/chat_models.py", line 931, in generate
+ralph-backend  |     self._generate_with_cache(
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/langchain_core/language_models/chat_models.py", line 1233, in _generate_with_cache
+ralph-backend  |     result = self._generate(
+ralph-backend  |              ^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/langchain_openai/chat_models/base.py", line 1386, in _generate
+ralph-backend  |     raise e
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/langchain_openai/chat_models/base.py", line 1381, in _generate
+ralph-backend  |     raw_response = self.client.with_raw_response.create(**payload)
+ralph-backend  |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/openai/_legacy_response.py", line 364, in wrapped
+ralph-backend  |     return cast(LegacyAPIResponse[R], func(*args, **kwargs))
+ralph-backend  |                                       ^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/openai/_utils/_utils.py", line 286, in wrapper
+ralph-backend  |     return func(*args, **kwargs)
+ralph-backend  |            ^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/openai/resources/chat/completions/completions.py", line 1192, in create
+ralph-backend  |     return self._post(
+ralph-backend  |            ^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/openai/_base_client.py", line 1259, in post
+ralph-backend  |     return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+ralph-backend  |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/openai/_base_client.py", line 1047, in request
+ralph-backend  |     raise self._make_status_error_from_response(err.response) from None
+ralph-backend  | openai.AuthenticationError: Error code: 401 - {'error': {'message': 'Incorrect API key provided: sk-dummy************ting. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'code': 'invalid_api_key', 'param': None}, 'status': 401}
+ralph-backend  | During task with name 'orchestrator' and id '2437e8a8-9af9-3083-b404-b09f1985a174'
+ralph-backend  | INFO:     172.20.0.3:33250 - "POST /chat HTTP/1.1" 200 OK
+ralph-backend  | ERROR:    Exception in ASGI application
+ralph-backend  | Traceback (most recent call last):
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/protocols/http/h11_impl.py", line 410, in run_asgi
+ralph-backend  |     result = await app(  # type: ignore[func-returns-value]
+ralph-backend  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/uvicorn/middleware/proxy_headers.py", line 60, in __call__
+ralph-backend  |     return await self.app(scope, receive, send)
+ralph-backend  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/fastapi/applications.py", line 1135, in __call__
+ralph-backend  |     await super().__call__(scope, receive, send)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/applications.py", line 107, in __call__
+ralph-backend  |     await self.middleware_stack(scope, receive, send)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 186, in __call__
+ralph-backend  |     raise exc
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/errors.py", line 164, in __call__
+ralph-backend  |     await self.app(scope, receive, _send)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/middleware/exceptions.py", line 63, in __call__
+ralph-backend  |     await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+ralph-backend  |     raise exc
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+ralph-backend  |     await app(scope, receive, sender)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/fastapi/middleware/asyncexitstack.py", line 18, in __call__
+ralph-backend  |     await self.app(scope, receive, send)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 716, in __call__
+ralph-backend  |     await self.middleware_stack(scope, receive, send)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 736, in app
+ralph-backend  |     await route.handle(scope, receive, send)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/routing.py", line 290, in handle
+ralph-backend  |     await self.app(scope, receive, send)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 115, in app
+ralph-backend  |     await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 53, in wrapped_app
+ralph-backend  |     raise exc
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/_exception_handler.py", line 42, in wrapped_app
+ralph-backend  |     await app(scope, receive, sender)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/fastapi/routing.py", line 102, in app
+ralph-backend  |     await response(scope, receive, send)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/responses.py", line 269, in __call__
+ralph-backend  |     with collapse_excgroups():
+ralph-backend  |   File "/usr/local/lib/python3.11/contextlib.py", line 158, in __exit__
+ralph-backend  |     self.gen.throw(typ, value, traceback)
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/_utils.py", line 85, in collapse_excgroups
+ralph-backend  |     raise exc
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/responses.py", line 273, in wrap
+ralph-backend  |     await func()
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/starlette/responses.py", line 253, in stream_response
+ralph-backend  |     async for chunk in self.body_iterator:
+ralph-backend  |   File "/app/src/streaming.py", line 10, in stream_graph_events
+ralph-backend  |     async for event in workflow.astream(inputs, stream_mode="updates"):
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/langgraph/pregel/main.py", line 2974, in astream
+ralph-backend  |     async for _ in runner.atick(
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/langgraph/pregel/_runner.py", line 304, in atick
+ralph-backend  |     await arun_with_retry(
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/langgraph/pregel/_retry.py", line 138, in arun_with_retry
+ralph-backend  |     return await task.proc.ainvoke(task.input, config)
+ralph-backend  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/langgraph/_internal/_runnable.py", line 705, in ainvoke
+ralph-backend  |     input = await asyncio.create_task(
+ralph-backend  |             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/langgraph/_internal/_runnable.py", line 473, in ainvoke
+ralph-backend  |     ret = await self.afunc(*args, **kwargs)
+ralph-backend  |           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/langchain_core/runnables/config.py", line 610, in run_in_executor
+ralph-backend  |     return await asyncio.get_running_loop().run_in_executor(
+ralph-backend  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/concurrent/futures/thread.py", line 58, in run
+ralph-backend  |     result = self.fn(*self.args, **self.kwargs)
+ralph-backend  |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/langchain_core/runnables/config.py", line 601, in wrapper
+ralph-backend  |     return func(*args, **kwargs)
+ralph-backend  |            ^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/app/src/orchestrator.py", line 47, in orchestrator_node
+ralph-backend  |     response = llm.invoke([SystemMessage(content=system_message)] + list(messages))
+ralph-backend  |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/langchain_core/language_models/chat_models.py", line 402, in invoke
+ralph-backend  |     self.generate_prompt(
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/langchain_core/language_models/chat_models.py", line 1121, in generate_prompt
+ralph-backend  |     return self.generate(prompt_messages, stop=stop, callbacks=callbacks, **kwargs)
+ralph-backend  |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/langchain_core/language_models/chat_models.py", line 931, in generate
+ralph-backend  |     self._generate_with_cache(
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/langchain_core/language_models/chat_models.py", line 1233, in _generate_with_cache
+ralph-backend  |     result = self._generate(
+ralph-backend  |              ^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/langchain_openai/chat_models/base.py", line 1386, in _generate
+ralph-backend  |     raise e
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/langchain_openai/chat_models/base.py", line 1381, in _generate
+ralph-backend  |     raw_response = self.client.with_raw_response.create(**payload)
+ralph-backend  |                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/openai/_legacy_response.py", line 364, in wrapped
+ralph-backend  |     return cast(LegacyAPIResponse[R], func(*args, **kwargs))
+ralph-backend  |                                       ^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/openai/_utils/_utils.py", line 286, in wrapper
+ralph-backend  |     return func(*args, **kwargs)
+ralph-backend  |            ^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/openai/resources/chat/completions/completions.py", line 1192, in create
+ralph-backend  |     return self._post(
+ralph-backend  |            ^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/openai/_base_client.py", line 1259, in post
+ralph-backend  |     return cast(ResponseT, self.request(cast_to, opts, stream=stream, stream_cls=stream_cls))
+ralph-backend  |                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+ralph-backend  |   File "/usr/local/lib/python3.11/site-packages/openai/_base_client.py", line 1047, in request
+ralph-backend  |     raise self._make_status_error_from_response(err.response) from None
+ralph-backend  | openai.AuthenticationError: Error code: 401 - {'error': {'message': 'Incorrect API key provided: sk-dummy************ting. You can find your API key at https://platform.openai.com/account/api-keys.', 'type': 'invalid_request_error', 'code': 'invalid_api_key', 'param': None}, 'status': 401}
+ralph-backend  | During task with name 'orchestrator' and id '2c991536-1972-b24a-7bf5-714236b4a769'

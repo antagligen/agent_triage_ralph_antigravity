@@ -5,7 +5,8 @@ secrets:
     file: ./secrets/backend_api_key.txt
   frontend_secret:
     file: ./secrets/frontend_secret.txt
-
+  google_api_key:
+    file: ./secrets/GOOGLE_API_KEY.txt
 services:
   backend:
     build: ./backend

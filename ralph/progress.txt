@@ -16,3 +16,16 @@
 - **Learnings:**
   - docker-compose environment variables override defaults in code
   - Explicit logging of configuration (like BACKEND_URL) drastically aids debugging in containerized envs
+## 2026-01-16 - US-002
+- Verified Docker Networking
+- Fixed Backend crash due to invalid API Key by implementing MockChatModel
+- Validated E2E connectivity via Browser and CLI
+- **Learnings:**
+  - ReAct agents require LLMs to support  ind_tools, even if mocked
+  - Defaulting to a Mock Mode when keys are missing drastically improves DX for new contributors
+## 2026-01-16 - US-003
+- Implemented Frontend Connection Status Indicator with backend /health check
+- Removed MockChatModel and dummy key logic from backend
+- **Learnings:**
+  - Streamlit sidebar re-renders on every interaction, making it a good place for status checks
+  - Removing mocks ensures valid configuration is enforced early in the process

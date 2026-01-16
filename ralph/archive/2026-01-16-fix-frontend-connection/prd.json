@@ -31,20 +31,6 @@
             "priority": 2,
             "passes": true,
             "notes": ""
-        },
-        {
-            "id": "US-003",
-            "title": "Verify Docker Networking",
-            "description": "As a devops engineer I want to be able to validate connection to backend /health",
-            "acceptanceCriteria": [
-                "remove current mocked setup for /chat",
-                "add a status text with a green/red dot in the frontend to show the connection status by doing requests to /health",
-                "add a refresh button to manually refresh the connection status",
-                "Verify in browser using dev-browser skill"
-            ],
-            "priority": 3,
-            "passes": true,
-            "notes": ""
         }
     ]
 }
