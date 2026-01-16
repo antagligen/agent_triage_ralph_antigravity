@@ -47,6 +47,8 @@ def init_session_state() -> None:
         st.session_state.model_provider = "openai"
     if "model_name" not in st.session_state:
         st.session_state.model_name = "gpt-4o"
+    if "active_subagent" not in st.session_state:
+        st.session_state.active_subagent = None
 
 
 def render_chat_history() -> None:
@@ -187,6 +189,10 @@ def handle_user_input(user_input: str) -> None:
         routing_container = st.container()
         response_container = st.container()
         
+        # Active sub-agent status placeholder (clears when response completes)
+        with routing_container:
+            active_subagent_placeholder = st.empty()
+        
         # Collect events for history
         thoughts: list[dict] = []
         routing_events: list[str] = []
@@ -224,11 +230,12 @@ def handle_user_input(user_input: str) -> None:
                         st.markdown("\n\n".join(response_chunks))
             
             elif event.event_type == "routing":
-                # Display routing indicator
+                # Display active sub-agent indicator (updates in real-time)
                 target = event.data.get("routing", "unknown")
                 routing_events.append(target)
-                with routing_container:
-                    st.info(f"🔀 Switching to: **{target}**")
+                st.session_state.active_subagent = target
+                # Update the active indicator placeholder
+                active_subagent_placeholder.info(f"🔀 Active: **{target}**")
             
             elif event.event_type == "response":
                 # Direct response event (if backend sends it)
@@ -240,6 +247,10 @@ def handle_user_input(user_input: str) -> None:
             elif event.event_type == "error":
                 error_message = event.data.get("content", "Unknown error")
                 st.error(error_message)
+        
+        # Clear active sub-agent indicator when response completes
+        active_subagent_placeholder.empty()
+        st.session_state.active_subagent = None
         
         # If no response chunks but we have thoughts, use the last thought as response
         final_response = "\n\n".join(response_chunks) if response_chunks else "No response received."
@@ -333,7 +344,13 @@ def render_sidebar() -> None:
         # System Status
         st.subheader("System Status")
         st.metric("Backend", "Pending", help="Connection to backend API")
-        st.metric("Sub-Agents", "0 Active", help="Number of active sub-agents")
+        
+        # Display active sub-agent in sidebar
+        active_agent = st.session_state.get("active_subagent")
+        if active_agent:
+            st.metric("Active Sub-Agent", active_agent, help="Currently active sub-agent")
+        else:
+            st.metric("Sub-Agents", "Idle", help="No sub-agent currently active")
 
 
 def main() -> None:
