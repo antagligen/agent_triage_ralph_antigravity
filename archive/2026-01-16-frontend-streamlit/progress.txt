@@ -1,0 +1,82 @@
+# Ralph Progress Log
+---
+## Codebase Patterns
+- One Task = One Chat Session
+- Always check out the correct branch before starting work
+- `load_config` is cached with `@lru_cache` to avoid I/O on every request
+- Pydantic models ensure strict typing for the configuration file
+- `src` needs `__init__.py` for pytest to correctly resolve imports
+- Streamlit uses `st.session_state` to maintain state across reruns
+- SSE streaming with `requests` requires `stream=True` and line-by-line parsing
+- Docker Compose networks allow service-to-service communication by service name
+
+---
+## 2026-01-15T21:40 - US-001 (Basic Streamlit App Scaffold)
+- Created `frontend/app.py` with page config, header, and placeholder UI
+- Created `frontend/Dockerfile` for Streamlit microservice
+- Created `frontend/requirements.txt` with streamlit and requests
+- Created `backend/Dockerfile` for FastAPI microservice
+- Created `docker-compose.yml` with backend and frontend services
+- **Learnings:**
+  - Streamlit runs on port 8501 by default
+  - Use `--server.headless true` for non-interactive mode
+---
+## 2026-01-15T21:46 - US-002 (Chat Input and History Display)
+- Updated `frontend/app.py` with chat input and history functionality
+- Added `init_session_state()` for `st.session_state.messages` initialization
+- Added `render_chat_history()` using `st.chat_message` for user/assistant messages
+- Added `handle_user_input()` to process and display messages immediately
+- Moved system status to sidebar with `render_system_status()`
+- **Learnings:**
+  - `st.chat_input` always renders at the bottom of the page
+  - `st.chat_message` uses "user" and "assistant" roles for different avatars
+  - Session state persists across Streamlit reruns
+---
+## 2026-01-15T21:48 - US-003 (Backend API Communication)
+- Added `send_message_to_backend()` function in `frontend/app.py`
+- POST to `/chat` endpoint with `{"message": str}` payload
+- Parse SSE stream and collect content from `data:` fields
+- Handle `ConnectionError`, `Timeout`, and `RequestException` with user-friendly messages
+- Added loading spinner during API calls
+- Configurable `BACKEND_URL` via environment variable
+- **Learnings:**
+  - Use `stream=True` and `iter_content()` for SSE parsing in requests
+  - SSE events separated by double newlines
+---
+## 2026-01-15T22:15 - US-004 (SSE Streaming Response Handler)
+- Verified SSE streaming implementation already present in `frontend/app.py`
+- `SSEEvent` dataclass for typed event handling
+- `parse_sse_event()` parses `event:` and `data:` lines from SSE stream
+- `stream_sse_events()` generator streams from backend `/chat` endpoint
+- Event handlers for `thought`, `routing`, `response`, and `error` types
+- Real-time markdown rendering with `st.markdown` in placeholder containers
+- Browser verification confirmed "💭 Agent Thoughts" section renders correctly
+- **Learnings:**
+  - Local Streamlit needs `BACKEND_URL=http://localhost:8000` to connect to Docker backend
+  - Backend premature connection close is a backend issue, not frontend SSE parsing
+---
+## 2026-01-15T22:18 - US-005 (Configuration Sidebar - Model Selection)
+- Added `MODEL_PRESETS` dictionary with preset models for OpenAI and Gemini providers
+- Created `render_sidebar()` replacing `render_system_status()` with configuration UI
+- Added Model Provider dropdown (OpenAI, Gemini) with auto-reset on provider change
+- Added Model dropdown with provider-specific presets
+- Added Custom Model text input for manual model overrides
+- Added "Current Config" section showing selected provider and model
+- Updated `init_session_state()` to initialize `model_provider` and `model_name`
+- Updated `stream_sse_events()` to accept `provider` and `model` parameters
+- API payload now includes `provider` and `model` fields
+- Browser verification confirmed all UI elements functional
+- **Learnings:**
+  - `st.rerun()` triggers a page refresh when provider changes to reset model selection
+  - Streamlit selectbox index must be calculated from current session state
+---
+## 2026-01-16T09:13 - US-006 (Sub-Agent Active Indicator)
+- Added `active_subagent` to `st.session_state` for tracking current sub-agent
+- Created `active_subagent_placeholder` using `st.empty()` for dynamic indicator
+- Updated routing event handler to set active sub-agent and display "🔀 Active: **{target}**"
+- Added `placeholder.empty()` call to clear indicator when response completes
+- Updated sidebar System Status to show active sub-agent name or "Idle"
+- **Learnings:**
+   - `st.empty()` is ideal for temporary status messages that need to clear
+   - Session state can track transient UI state across streaming events
+---

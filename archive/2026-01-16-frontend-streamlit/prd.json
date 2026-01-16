@@ -1,0 +1,102 @@
+{
+    "project": "AI Troubleshooting Agent",
+    "branchName": "ralph/frontend-streamlit",
+    "description": "Frontend Streamlit Interface - Chat UI with streaming events, configuration management, and sub-agent visualization.",
+    "userStories": [
+        {
+            "id": "US-001",
+            "title": "Basic Streamlit App Scaffold",
+            "description": "As a developer, I need a basic Streamlit application structure with Docker configuration so that the frontend can run as a microservice.",
+            "acceptanceCriteria": [
+                "Create `frontend/app.py` with basic Streamlit page config",
+                "Create `frontend/Dockerfile` for the Streamlit service",
+                "Create `frontend/requirements.txt` with streamlit and requests",
+                "Update `docker-compose.yml` to include the frontend service",
+                "Verify the app starts and shows a placeholder page",
+                "Typecheck passes"
+            ],
+            "priority": 1,
+            "passes": true,
+            "notes": ""
+        },
+        {
+            "id": "US-002",
+            "title": "Chat Input and History Display",
+            "description": "As a user, I want a chat input field and message history display so that I can interact with the agent.",
+            "acceptanceCriteria": [
+                "Add chat input field at the bottom of the page using `st.chat_input`",
+                "Maintain chat history in `st.session_state`",
+                "Display chat history using `st.chat_message` for user and assistant",
+                "User messages appear immediately after submission",
+                "Typecheck passes",
+                "Verify in browser using dev-browser skill"
+            ],
+            "priority": 2,
+            "passes": true,
+            "notes": ""
+        },
+        {
+            "id": "US-003",
+            "title": "Backend API Communication",
+            "description": "As a user, I want the frontend to send my messages to the backend API so that the agent can process them.",
+            "acceptanceCriteria": [
+                "POST user message to `http://backend:8000/chat` endpoint",
+                "Handle connection errors gracefully with user feedback",
+                "Display loading indicator while waiting for response",
+                "Typecheck passes"
+            ],
+            "priority": 3,
+            "passes": true,
+            "notes": ""
+        },
+        {
+            "id": "US-004",
+            "title": "SSE Streaming Response Handler",
+            "description": "As a user, I want to see the agent's response stream in real-time so that I can follow its thought process.",
+            "acceptanceCriteria": [
+                "Parse SSE stream from backend `/chat` endpoint",
+                "Handle `event: thought` by displaying in expandable section",
+                "Handle `event: response` by appending to assistant message",
+                "Handle `event: routing` by showing routing indicator",
+                "Real-time markdown rendering of response chunks",
+                "Typecheck passes",
+                "Verify in browser using dev-browser skill"
+            ],
+            "priority": 4,
+            "passes": true,
+            "notes": ""
+        },
+        {
+            "id": "US-005",
+            "title": "Configuration Sidebar - Model Selection",
+            "description": "As a user, I want to select which AI model to use from a sidebar so that I can choose between providers.",
+            "acceptanceCriteria": [
+                "Add sidebar with `st.sidebar`",
+                "Add dropdown to select model provider (OpenAI, Gemini)",
+                "Add text input or dropdown for model name",
+                "Store selection in `st.session_state`",
+                "Include selected model in API request payload",
+                "Typecheck passes",
+                "Verify in browser using dev-browser skill"
+            ],
+            "priority": 5,
+            "passes": true,
+            "notes": ""
+        },
+        {
+            "id": "US-006",
+            "title": "Sub-Agent Active Indicator",
+            "description": "As a user, I want to see which sub-agent is currently active so that I understand the agent's routing decisions.",
+            "acceptanceCriteria": [
+                "Display active sub-agent name when routing event received",
+                "Show routing indicator in chat stream (e.g., 'Switching to Network Specialist...')",
+                "Indicator clears when response completes",
+                "Typecheck passes",
+                "Verify in browser using dev-browser skill"
+            ],
+            "priority": 6,
+            "passes": true,
+            "notes": ""
+        }
+    ]
+}

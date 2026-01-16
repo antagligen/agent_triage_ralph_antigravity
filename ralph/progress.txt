@@ -26,3 +26,12 @@
   - Documenting the SSE stream format (thought vs routing) is critical for frontend integration.
   - Explicitly documenting how to extend the graph (add nodes) removes ambiguity for future agents.
 ---
+
+## 2026-01-16 11:00 - US-003
+- Implemented `frontend/README.md` documenting the Streamlit app.
+- Files changed: `frontend/README.md`
+- **Learnings:**
+  - `st.status` is a great way to hide technical details like "thought chains" while keeping them accessible.
+  - Documenting the SSE event types (`thought`, `routing`) helps clarify the protocol between frontend and backend.
+---
+
