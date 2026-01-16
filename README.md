@@ -44,15 +44,30 @@ The system consists of three main components:
 
 ```mermaid
 graph LR
-    User[User] -->|Interacts| FE[Frontend (Streamlit)]
-    FE -->|HTTP Request / SSE| BE[Backend (FastAPI)]
-    BE -->|Invokes| Orch[Orchestrator (LangGraph)]
+    %% Define Nodes with Shapes
+    User([User]) -->|Interacts :8501| FE["Frontend (Streamlit)"]
+    FE -->|HTTP Request / SSE :8000| BE["Backend (FastAPI)"]
+    BE -->|Invokes| Orch["Orchestrator (LangGraph)"]
     Orch -->|Queries| LLM[LLM Provider]
     
-    subgraph "Docker Network"
-    FE
-    BE
+    %% Define Subgraph
+    subgraph Docker ["Docker Network"]
+        direction LR
+        FE
+        BE
     end
+
+    %% Styling Classes
+    classDef external fill:#f9f9f9,stroke:#333,stroke-width:2px,color:#333;
+    classDef dockerNode fill:#e1f5fe,stroke:#0277bd,stroke-width:2px,color:#01579b;
+    classDef logicNode fill:#fff3e0,stroke:#ef6c00,stroke-width:2px,color:#e65100;
+    classDef container fill:#ffffff,stroke:#0277bd,stroke-width:2px,stroke-dasharray: 5 5;
+
+    %% Apply Classes
+    class User external;
+    class FE,BE dockerNode;
+    class Orch,LLM logicNode;
+    class Docker container;
 ```
 
 ### Agentic Workflow
