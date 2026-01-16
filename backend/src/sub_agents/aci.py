@@ -4,6 +4,7 @@ from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import create_react_agent
 from ..config import AppConfig
+from ..llm_factory import get_llm
 
 # Mocked Tools
 @tool
@@ -28,8 +29,9 @@ def get_aci_agent_node(config: AppConfig):
     # Filter tools based on config if needed, but for now we provide the set relevant to this agent
     tools = [aci_diag, ping, traceroute]
     
+
     # We use a separate model instance for the sub-agent, theoretically could be different from orchestrator
-    llm = ChatOpenAI(model=config.orchestrator_model, temperature=0)
+    llm = get_llm(config.orchestrator_provider, config.orchestrator_model, temperature=0)
     
     # Using LangGraph's prebuilt react agent for simplicity
     agent = create_react_agent(llm, tools=tools)

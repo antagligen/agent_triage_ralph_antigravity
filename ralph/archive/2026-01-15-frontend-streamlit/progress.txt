@@ -1,0 +1,8 @@
+# Ralph Progress Log
+---
+## Codebase Patterns
+- One Task = One Chat Session
+- Always check out the correct branch before starting work
+- `load_config` is cached with `@lru_cache` to avoid I/O on every request
+- Pydantic models ensure strict typing for the configuration file
+- `src` needs `__init__.py` for pytest to correctly resolve imports

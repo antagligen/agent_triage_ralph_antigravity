@@ -1,39 +1,27 @@
-version: "3.9"
+version: '3.8'
 
 services:
   backend:
-    build:
-      context: .
-      dockerfile: backend/Dockerfile
+    build: ./backend
+    container_name: ralph-backend
     ports:
       - "8000:8000"
     volumes:
-      - ./config.yaml:/app/config.yaml:ro
-    env_file:
-      - .env
-    healthcheck:
-      test: [ "CMD", "curl", "-f", "http://localhost:8000/health" ]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 10s
-    networks:
-      - agent-network
+      - ./backend/src:/app/src
+      - ./backend/config.yaml:/app/config.yaml
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    restart: unless-stopped
 
   frontend:
-    build:
-      context: ./frontend
-      dockerfile: Dockerfile
+    # build: ./frontend  # Uncomment when frontend Dockerfile exists
+    image: python:3.11-slim # Temporary placeholder or use a managed image if implementing properly
+    container_name: ralph-frontend
+    working_dir: /app
+    volumes:
+      - ./frontend:/app
+    command: echo "Frontend not implemented yet"
     ports:
       - "8501:8501"
     depends_on:
-      backend:
-        condition: service_healthy
-    environment:
-      - BACKEND_URL=http://backend:8000
-    networks:
-      - agent-network
-
-networks:
-  agent-network:
-    driver: bridge
+      - backend

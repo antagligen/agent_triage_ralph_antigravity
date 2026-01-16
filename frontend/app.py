@@ -1,372 +1,157 @@
-"""
-AI Troubleshooting Agent - Streamlit Frontend
-A chat interface for interacting with the AI troubleshooting agent.
-"""
-
 import streamlit as st
 import requests
 import json
-from typing import Generator
 import os
-from dataclasses import dataclass
 
-# Backend API configuration
-BACKEND_URL = os.environ.get("BACKEND_URL", "http://backend:8000")
-CHAT_ENDPOINT = f"{BACKEND_URL}/chat"
+# --- Configuration ---
+BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
+API_CHAT_URL = f"{BACKEND_URL}/chat"
 
+st.set_page_config(
+    page_title="Ralph - AI Troubleshooting Agent",
+    page_icon="🤖",
+    layout="wide"
+)
 
-@dataclass
-class SSEEvent:
-    """Represents a parsed SSE event."""
-    event_type: str  # "thought", "routing", "response"
-    data: dict
+st.title("🤖 Ralph - AI Troubleshooting Agent")
 
+# --- Session State Initialization ---
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-def configure_page() -> None:
-    """Configure the Streamlit page settings."""
-    st.set_page_config(
-        page_title="AI Troubleshooting Agent",
-        page_icon="🤖",
-        layout="wide",
-        initial_sidebar_state="expanded"
+# --- Sidebar ---
+with st.sidebar:
+    st.header("Settings")
+    
+    # Model Provider Selection
+    provider = st.radio(
+        "Model Provider",
+        ["OpenAI", "Gemini"],
+        index=0
     )
-
-
-def render_header() -> None:
-    """Render the application header."""
-    st.title("🤖 AI Troubleshooting Agent")
-    st.caption("An intelligent assistant for network and infrastructure troubleshooting")
+    
+    # Model Name Selection based on Provider
+    if provider == "OpenAI":
+        model_options = ["gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"]
+    else:
+        model_options = ["gemini-1.5-pro", "gemini-1.5-flash", "gemini-1.0-pro"]
+        
+    model_name = st.selectbox(
+        "Model Name",
+        model_options,
+        index=0
+    )
+    
     st.divider()
-
-
-def init_session_state() -> None:
-    """Initialize session state variables for chat history and model config."""
-    if "messages" not in st.session_state:
+    
+    if st.button("Clear History"):
         st.session_state.messages = []
-    if "model_provider" not in st.session_state:
-        st.session_state.model_provider = "openai"
-    if "model_name" not in st.session_state:
-        st.session_state.model_name = "gpt-4o"
-    if "active_subagent" not in st.session_state:
-        st.session_state.active_subagent = None
+        st.rerun()
 
+# --- Display Chat History ---
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+        # If we saved thoughts, we could display them here too, 
+        # but for now let's focus on the conversation flow.
 
-def render_chat_history() -> None:
-    """Render the chat message history."""
-    for message in st.session_state.messages:
-        with st.chat_message(message["role"]):
-            # Render thoughts in an expander if present
-            if "thoughts" in message and message["thoughts"]:
-                with st.expander("💭 Agent Thoughts", expanded=False):
-                    for thought in message["thoughts"]:
-                        node = thought.get("node", "unknown")
-                        content = thought.get("content", "")
-                        st.markdown(f"**{node}:** {content}")
-            # Render routing info if present
-            if "routing" in message and message["routing"]:
-                for route in message["routing"]:
-                    st.info(f"🔀 Switching to: **{route}**")
-            # Render main content
-            st.markdown(message["content"])
-
-
-def parse_sse_event(event_str: str) -> SSEEvent | None:
-    """Parse a single SSE event string into an SSEEvent object.
-    
-    Args:
-        event_str: Raw SSE event string (may contain 'event:' and 'data:' lines)
-        
-    Returns:
-        SSEEvent object or None if parsing fails
-    """
-    event_type = "message"  # default SSE event type
-    data_str = None
-    
-    for line in event_str.split("\n"):
-        line = line.strip()
-        if line.startswith("event:"):
-            event_type = line[6:].strip()
-        elif line.startswith("data:"):
-            data_str = line[5:].strip()
-    
-    if data_str is None:
-        return None
-    
-    try:
-        data = json.loads(data_str)
-        return SSEEvent(event_type=event_type, data=data)
-    except json.JSONDecodeError:
-        return None
-
-
-def stream_sse_events(
-    message: str,
-    provider: str | None = None,
-    model: str | None = None
-) -> Generator[SSEEvent, None, None]:
-    """Stream SSE events from the backend.
-    
-    Args:
-        message: The user's message to send.
-        provider: Optional model provider override (e.g., "openai", "gemini")
-        model: Optional model name override (e.g., "gpt-4o", "gemini-2.0-flash")
-        
-    Yields:
-        SSEEvent objects as they arrive from the backend.
-    """
-    # Build request payload with optional model overrides
-    payload: dict[str, str] = {"message": message}
-    if provider:
-        payload["provider"] = provider
-    if model:
-        payload["model"] = model
-    
-    try:
-        response = requests.post(
-            CHAT_ENDPOINT,
-            json=payload,
-            stream=True,
-            timeout=120
-        )
-        
-        if response.status_code != 200:
-            yield SSEEvent(
-                event_type="error",
-                data={"content": f"Backend returned status {response.status_code}: {response.text}"}
-            )
-            return
-        
-        buffer = ""
-        
-        for chunk in response.iter_content(chunk_size=1024, decode_unicode=True):
-            if chunk:
-                buffer += chunk
-                
-                # Parse SSE events (double newline separates events)
-                while "\n\n" in buffer:
-                    event_str, buffer = buffer.split("\n\n", 1)
-                    event = parse_sse_event(event_str)
-                    if event:
-                        yield event
-                        
-    except requests.exceptions.ConnectionError:
-        yield SSEEvent(
-            event_type="error",
-            data={"content": "❌ **Connection Error:** Could not connect to the backend. Please ensure the backend service is running."}
-        )
-    except requests.exceptions.Timeout:
-        yield SSEEvent(
-            event_type="error",
-            data={"content": "❌ **Timeout:** The backend took too long to respond. Please try again."}
-        )
-    except requests.exceptions.RequestException as e:
-        yield SSEEvent(
-            event_type="error",
-            data={"content": f"❌ **Request Error:** {str(e)}"}
-        )
-
-
-def handle_user_input(user_input: str) -> None:
-    """Handle user input with real-time SSE streaming display.
-    
-    Args:
-        user_input: The user's message text.
-    """
-    # Add user message to history
-    st.session_state.messages.append({
-        "role": "user",
-        "content": user_input
-    })
-    
-    # Display user message immediately
+# --- Chat Input & Streaming Logic ---
+if prompt := st.chat_input("How can I help you troubleshoot?"):
+    # 1. Display User Message
     with st.chat_message("user"):
-        st.markdown(user_input)
-    
-    # Process streaming response
+        st.markdown(prompt)
+    st.session_state.messages.append({"role": "user", "content": prompt})
+
+    # 2. Prepare for Assistant Response
     with st.chat_message("assistant"):
-        # Containers for dynamic content
-        thoughts_container = st.container()
-        routing_container = st.container()
-        response_container = st.container()
+        message_placeholder = st.empty()
         
-        # Active sub-agent status placeholder (clears when response completes)
-        with routing_container:
-            active_subagent_placeholder = st.empty()
+        # We'll use an expander for "Thoughts" that updates in real-time
+        thought_expander = st.status("Thinking...", expanded=True)
+        thought_text = ""
         
-        # Collect events for history
-        thoughts: list[dict] = []
-        routing_events: list[str] = []
-        response_chunks: list[str] = []
-        error_message: str | None = None
+        full_response = ""
         
-        # Active expander for thoughts (shown during streaming)
-        with thoughts_container:
-            thoughts_expander = st.expander("💭 Agent Thoughts", expanded=True)
-        
-        # Response placeholder for real-time updates
-        with response_container:
-            response_placeholder = st.empty()
-        
-        # Stream and display events with model config
-        for event in stream_sse_events(
-            user_input,
-            provider=st.session_state.model_provider,
-            model=st.session_state.model_name
-        ):
-            if event.event_type == "thought":
-                node = event.data.get("node", "unknown")
-                content = event.data.get("content", "")
-                thoughts.append({"node": node, "content": content})
+        try:
+            # 3. Call Backend API with Streaming
+            payload = {
+                "message": prompt,
+                "model_provider": provider.lower(),  # Backend expects lowercase
+                "model_name": model_name
+            }
+            
+            response = requests.post(
+                API_CHAT_URL, 
+                json=payload, 
+                stream=True
+            )
+            
+            if response.status_code == 200:
+                # 4. Process SSE Stream
+                for line in response.iter_lines():
+                    if line:
+                        decoded_line = line.decode('utf-8')
+                        
+                        if decoded_line.startswith("event:"):
+                            event_type = decoded_line.split(":", 1)[1].strip()
+                        elif decoded_line.startswith("data:"):
+                            data_str = decoded_line.split(":", 1)[1].strip()
+                            
+                            try:
+                                data = json.loads(data_str)
+                                
+                                if event_type == "thought":
+                                    # Handle internal thought events
+                                    node = data.get("node", "Unknown")
+                                    content = data.get("content", "")
+                                    
+                                    # Append to the thought log
+                                    new_thought = f"**[{node}]**: {content}\n\n"
+                                    thought_text += new_thought
+                                    thought_expander.markdown(thought_text)
+                                    
+                                elif event_type == "routing":
+                                    # Handle routing events
+                                    next_node = data.get("routing", "")
+                                    thought_text += f"*Routing to: `{next_node}`*\n\n"
+                                    thought_expander.markdown(thought_text)
+                                
+                                # We treat the actual message content as part of the thought stream 
+                                # if it comes from nodes, but usually the 'final' response 
+                                # comes differently or is just the accumulation of text.
+                                # Based on current backend implementation, 'thought' events
+                                # contain the content.
+                                # Let's assume for now that if node is 'orchestrator' 
+                                # and it's sending content, it might be the final answer?
+                                # Actually the backend streams EVERYTHING as thoughts currently.
+                                # We need to decide what constitutes the "Final Answer".
+                                # For this pass, we'll append everything to full_response 
+                                # AND show it in thoughts.
+                                
+                                # Refinement: Only show "Assistant" final text if we identify it.
+                                # But per backend code:
+                                # yield f"event: thought\ndata: {data}\n\n"
+                                # It doesn't distinguish final answer well yet.
+                                
+                                # Strategy: Just accumulate content for the main display?
+                                # Or if it is a specific node?
+                                # Let's mirror the content to the main chat for now.
+                                if data.get("content"):
+                                    chunk = data.get("content")
+                                    full_response += chunk
+                                    message_placeholder.markdown(full_response + "▌")
+
+                            except json.JSONDecodeError:
+                                pass # formatting error or keepalive
+            else:
+                st.error(f"Error: {response.status_code} - {response.text}")
                 
-                with thoughts_expander:
-                    st.markdown(f"**{node}:** {content}")
+            thought_expander.update(label="Finished Processing", state="complete", expanded=False)
+            message_placeholder.markdown(full_response)
+            
+            # 5. Save valid response to history
+            if full_response:
+                st.session_state.messages.append({"role": "assistant", "content": full_response})
                 
-                # Also add to response if it's from orchestrator (final answer)
-                # The backend sends the final response as a 'thought' from orchestrator
-                if node == "orchestrator" or node == "network_specialist":
-                    response_chunks.append(content)
-                    # Update response in real-time
-                    with response_placeholder:
-                        st.markdown("\n\n".join(response_chunks))
-            
-            elif event.event_type == "routing":
-                # Display active sub-agent indicator (updates in real-time)
-                target = event.data.get("routing", "unknown")
-                routing_events.append(target)
-                st.session_state.active_subagent = target
-                # Update the active indicator placeholder
-                active_subagent_placeholder.info(f"🔀 Active: **{target}**")
-            
-            elif event.event_type == "response":
-                # Direct response event (if backend sends it)
-                content = event.data.get("content", "")
-                response_chunks.append(content)
-                with response_placeholder:
-                    st.markdown("\n\n".join(response_chunks))
-            
-            elif event.event_type == "error":
-                error_message = event.data.get("content", "Unknown error")
-                st.error(error_message)
-        
-        # Clear active sub-agent indicator when response completes
-        active_subagent_placeholder.empty()
-        st.session_state.active_subagent = None
-        
-        # If no response chunks but we have thoughts, use the last thought as response
-        final_response = "\n\n".join(response_chunks) if response_chunks else "No response received."
-        if error_message:
-            final_response = error_message
-    
-    # Add assistant response to history with thoughts and routing
-    st.session_state.messages.append({
-        "role": "assistant",
-        "content": final_response,
-        "thoughts": thoughts,
-        "routing": routing_events
-    })
-
-
-# Model presets for each provider
-MODEL_PRESETS: dict[str, list[str]] = {
-    "openai": ["gpt-4o", "gpt-4o-mini", "gpt-4-turbo", "gpt-3.5-turbo"],
-    "gemini": ["gemini-2.0-flash", "gemini-1.5-flash", "gemini-1.5-pro"],
-}
-
-
-def render_sidebar() -> None:
-    """Render the sidebar with model configuration and system status."""
-    with st.sidebar:
-        st.header("⚙️ Configuration")
-        
-        # Model Provider Selection
-        provider_options = ["openai", "gemini"]
-        current_provider_index = provider_options.index(
-            st.session_state.model_provider
-        ) if st.session_state.model_provider in provider_options else 0
-        
-        selected_provider = st.selectbox(
-            "Model Provider",
-            options=provider_options,
-            index=current_provider_index,
-            help="Select the AI model provider"
-        )
-        # Update session state if changed
-        if selected_provider and selected_provider != st.session_state.model_provider:
-            st.session_state.model_provider = selected_provider
-            # Reset to first preset model for new provider
-            st.session_state.model_name = MODEL_PRESETS.get(
-                selected_provider, ["gpt-4o"]
-            )[0]
-            st.rerun()
-        
-        # Model Name Selection (dropdown with presets + custom option)
-        model_options = MODEL_PRESETS.get(
-            str(st.session_state.model_provider), ["gpt-4o"]
-        )
-        current_model = str(st.session_state.model_name)
-        
-        # Check if current model is in presets, otherwise use custom
-        if current_model in model_options:
-            current_model_index = model_options.index(current_model)
-            use_custom = False
-        else:
-            current_model_index = 0
-            use_custom = True
-        
-        selected_model = st.selectbox(
-            "Model",
-            options=model_options,
-            index=current_model_index,
-            help="Select a model or use custom input below"
-        )
-        
-        # Custom model input
-        custom_model = st.text_input(
-            "Custom Model (optional)",
-            value=current_model if use_custom else "",
-            help="Enter a custom model name to override the dropdown"
-        )
-        
-        # Determine final model name
-        final_model = custom_model.strip() if custom_model.strip() else selected_model
-        if final_model and final_model != st.session_state.model_name:
-            st.session_state.model_name = final_model
-        
-        st.divider()
-        
-        # Display current configuration
-        st.subheader("Current Config")
-        st.caption(f"**Provider:** {st.session_state.model_provider}")
-        st.caption(f"**Model:** {st.session_state.model_name}")
-        
-        st.divider()
-        
-        # System Status
-        st.subheader("System Status")
-        st.metric("Backend", "Pending", help="Connection to backend API")
-        
-        # Display active sub-agent in sidebar
-        active_agent = st.session_state.get("active_subagent")
-        if active_agent:
-            st.metric("Active Sub-Agent", active_agent, help="Currently active sub-agent")
-        else:
-            st.metric("Sub-Agents", "Idle", help="No sub-agent currently active")
-
-
-def main() -> None:
-    """Main application entry point."""
-    configure_page()
-    init_session_state()
-    render_header()
-    render_sidebar()
-    
-    # Render existing chat history
-    render_chat_history()
-    
-    # Chat input at the bottom of the page
-    if user_input := st.chat_input("Ask a troubleshooting question..."):
-        handle_user_input(user_input)
-
-
-if __name__ == "__main__":
-    main()
+        except Exception as e:
+            st.error(f"Connection failed: {e}")
