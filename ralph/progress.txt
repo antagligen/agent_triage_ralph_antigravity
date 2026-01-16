@@ -10,17 +10,42 @@
 - SSE streaming with `requests` requires `stream=True` and line-by-line parsing
 - Docker Compose networks allow service-to-service communication by service name
 
-## 2026-01-16 - US-002
-- Configured Docker Compose secrets for backend and frontend
-- Updated .gitignore to exclude secrets directory
+## 2026-01-16 15:45 - US-001
+- Extracted streaming logic to `backend/src/streaming.py`
+- Refactored `backend/src/main.py`
 - **Learnings:**
-  - Docker Compose secrets are mounted at `/run/secrets/<secret_name>` by default
-  - Local file-based secrets require the file to exist on the host before starting services
+  - `mypy` checks are essential for refactoring safety
+  - `stream_graph_events` handles SSE format directly
 ---
 
-
-## 2026-01-16 - US-003
-- Updated README.md to include instructions for setting up Docker secrets.
-- **Learnings:**
-  - Clear documentation for local secret setup is crucial for developer onboarding.
+## 2026-01-16 15:52 - US-002
+- Created ackend/src/schemas.py for Pydantic models
+- Moved ChatRequest out of ackend/src/main.py`n- **Learnings:**
+  - Keeping schemas separate improves readability of the main entrypoint
 ---
+
+## 2026-01-16 15:46 - US-005
+- Refactored ackend/src/main.py:
+  - Moved imports to module level.
+  - Defined BASE_DIR, STATIC_DIR, CONFIG_PATH constants.
+  - Cleaned up get_config and chat endpoint.
+  - Added startup config verification.
+- **Learnings:**
+  - uvicorn imports pp directly, so if __name__ == __main__:  block runs only when executing script directly.
+  - curl on Windows requires careful quoting for JSON.
+---
+
+## 2026-01-16 16:00 - US-004
+- Added Mermaid state diagram to `backend/src/orchestrator.py` docstring.
+- Verified mypy checks pass for `backend/src`.
+- **Learnings:**
+  - `mypy` path configuration can be tricky when running from root vs subdirectory.
+---
+
+## 2026-01-16 16:15 - US-006
+- Validated all unit tests pass.
+- Updated ackend/tests to use correct mocks for get_llm.
+- **Learnings:**
+  - When switching from direct class instantiation to factory functions, mocks must be updated to target the factory or its return value.
+---
+

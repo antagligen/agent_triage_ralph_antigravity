@@ -1,18 +1,16 @@
 {
-    "project": "Docker Entrypoint Secret Injection",
-    "branchName": "ralph/docker-entrypoint",
-    "description": "Bridge the gap between Docker Secrets and legacy applications by injecting them as environment variables.",
+    "project": "Backend Refactoring",
+    "branchName": "ralph/backend-refactor",
+    "description": "Refactor backend/src/main.py to be lightweight and document the LangGraph logic.",
     "userStories": [
         {
             "id": "US-001",
-            "title": "Create Entrypoint Script",
-            "description": "As a DevOps engineer, I want a `bash` entrypoint script that reads files from `/run/secrets/`, exports them as environment variables, and executes the command.",
+            "title": "Extract Streaming Logic",
+            "description": "As a developer, I want the SSE streaming logic moved out of main.py into a dedicated module so that main.py remains focused on routing.",
             "acceptanceCriteria": [
-                "Script uses `#!/bin/bash` interpreter",
-                "Checks if `/run/secrets/` directory exists (warn if missing, read if present)",
-                "Iterates through every file in the secrets directory",
-                "Exports filename as Key and content as Value (with trailing whitespace stripped)",
-                "Executes the passed command using `exec \"$@\"`",
+                "Create backend/src/streaming.py",
+                "Move stream_graph_events function to backend/src/streaming.py",
+                "Ensure all necessary imports are present",
                 "Typecheck passes"
             ],
             "priority": 1,
@@ -21,27 +19,55 @@
         },
         {
             "id": "US-002",
-            "title": "Configure Docker Compose Secrets",
-            "description": "As a DevOps engineer, I want to update the `docker-compose.yml` file to define secrets and mount them into the relevant service containers so they are available at runtime.",
+            "title": "Extract Schemas",
+            "description": "As a developer, I want request/response models in their own module to keep the entrypoint clean.",
             "acceptanceCriteria": [
-                "Define a top-level `secrets` block referencing local secret files",
-                "Files referenced in `secrets` block must be explicitly ignored in `.gitignore`",
-                "Update target service definition to include a `secrets` list",
-                "Ensure secret names in `services` match the top-level keys",
-                "Verify container builds and secret files appear in `/run/secrets/` inside the container"
+                "Create backend/src/schemas.py",
+                "Move ChatRequest class locally",
+                "Update main.py to import ChatRequest",
+                "Typecheck passes"
             ],
             "priority": 2,
             "passes": true,
-            "notes": "Ensure file permissions on host secret files are restricted (e.g., 600)."
+            "notes": ""
         },
         {
-            "id": "US-003",
-            "title": "Configure Docker Compose Secrets",
-            "description": "Update the readme to include instructions for setting up secrets",
+            "id": "US-004",
+            "title": "Add Graph Diagram",
+            "description": "As a developer, I want a Mermaid diagram illustrating the LangGraph decision tree embedded in the code documentation.",
             "acceptanceCriteria": [
-                "Update the readme to include instructions for setting up secrets"
+                "Create Mermaid state diagram for orchestrator flow",
+                "Add diagram to backend/src/orchestrator.py module docstring",
+                "Ensure diagram accurately reflects logic",
+                "Typecheck passes"
+            ],
+            "priority": 4,
+            "passes": true,
+            "notes": ""
+        },
+        {
+            "id": "US-005",
+            "title": "Refactor Main Entrypoint",
+            "description": "As a developer, I want backend/src/main.py to simply compose imports and define routes.",
+            "acceptanceCriteria": [
+                "Refactor /chat endpoint in main.py to use streaming.py and schemas.py",
+                "Ensure config loading logic is clean",
+                "Verify application startup works",
+                "Verify /chat endpoint functions correctly",
+                "Typecheck passes"
             ],
             "priority": 3,
+            "passes": true,
+            "notes": "Refactored main.py to be a clean composition root. Mypy and startup verification passed."
+        },
+        {
+            "id": "US-006",
+            "title": "validate all unit tests",
+            "description": "After all refactoring is done, validate all unit tests pass.",
+            "acceptanceCriteria": [
+                "all created unit tests pass"
+            ],
+            "priority": 6,
             "passes": true,
             "notes": ""
         }

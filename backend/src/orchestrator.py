@@ -1,3 +1,18 @@
+"""
+Orchestrator Module
+
+This module defines the main LangGraph orchestrator that routes user queries
+to appropriate sub-agents or handles them directly.
+
+Graph Logic:
+```mermaid
+graph TD
+    Start([Start]) --> Orchestrator[Orchestrator Node]
+    Orchestrator -- "Direct Response" --> End([End])
+    Orchestrator -- "Route: network_specialist" --> NetworkSpecialist[Network Specialist (ACI)]
+    NetworkSpecialist --> End
+```
+"""
 from typing import TypedDict, Annotated, Sequence, Literal
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.graph import StateGraph, END
