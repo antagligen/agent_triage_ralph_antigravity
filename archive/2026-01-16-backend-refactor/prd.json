@@ -1,0 +1,75 @@
+{
+    "project": "Backend Refactoring",
+    "branchName": "ralph/backend-refactor",
+    "description": "Refactor backend/src/main.py to be lightweight and document the LangGraph logic.",
+    "userStories": [
+        {
+            "id": "US-001",
+            "title": "Extract Streaming Logic",
+            "description": "As a developer, I want the SSE streaming logic moved out of main.py into a dedicated module so that main.py remains focused on routing.",
+            "acceptanceCriteria": [
+                "Create backend/src/streaming.py",
+                "Move stream_graph_events function to backend/src/streaming.py",
+                "Ensure all necessary imports are present",
+                "Typecheck passes"
+            ],
+            "priority": 1,
+            "passes": true,
+            "notes": ""
+        },
+        {
+            "id": "US-002",
+            "title": "Extract Schemas",
+            "description": "As a developer, I want request/response models in their own module to keep the entrypoint clean.",
+            "acceptanceCriteria": [
+                "Create backend/src/schemas.py",
+                "Move ChatRequest class locally",
+                "Update main.py to import ChatRequest",
+                "Typecheck passes"
+            ],
+            "priority": 2,
+            "passes": true,
+            "notes": ""
+        },
+        {
+            "id": "US-004",
+            "title": "Add Graph Diagram",
+            "description": "As a developer, I want a Mermaid diagram illustrating the LangGraph decision tree embedded in the code documentation.",
+            "acceptanceCriteria": [
+                "Create Mermaid state diagram for orchestrator flow",
+                "Add diagram to backend/src/orchestrator.py module docstring",
+                "Ensure diagram accurately reflects logic",
+                "Typecheck passes"
+            ],
+            "priority": 4,
+            "passes": true,
+            "notes": ""
+        },
+        {
+            "id": "US-005",
+            "title": "Refactor Main Entrypoint",
+            "description": "As a developer, I want backend/src/main.py to simply compose imports and define routes.",
+            "acceptanceCriteria": [
+                "Refactor /chat endpoint in main.py to use streaming.py and schemas.py",
+                "Ensure config loading logic is clean",
+                "Verify application startup works",
+                "Verify /chat endpoint functions correctly",
+                "Typecheck passes"
+            ],
+            "priority": 3,
+            "passes": true,
+            "notes": "Refactored main.py to be a clean composition root. Mypy and startup verification passed."
+        },
+        {
+            "id": "US-006",
+            "title": "validate all unit tests",
+            "description": "After all refactoring is done, validate all unit tests pass.",
+            "acceptanceCriteria": [
+                "all created unit tests pass"
+            ],
+            "priority": 6,
+            "passes": true,
+            "notes": ""
+        }
+    ]
+}

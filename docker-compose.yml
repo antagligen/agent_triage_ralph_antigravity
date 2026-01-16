@@ -5,7 +5,8 @@ secrets:
     file: ./secrets/backend_api_key.txt
   frontend_secret:
     file: ./secrets/frontend_secret.txt
-
+  google_api_key:
+    file: ./secrets/GOOGLE_API_KEY.txt
 services:
   backend:
     build: ./backend
@@ -29,6 +30,8 @@ services:
       - ./frontend:/app
     ports:
       - "8501:8501"
+    environment:
+      - BACKEND_URL=http://backend:8000
     depends_on:
       - backend
     secrets:
