@@ -18,3 +18,11 @@
   - Mermaid diagrams in READMEs provide excellent immediate context for new developers.
   - `docker-compose` instructions should always be at the top for quick starts.
 ---
+
+## 2026-01-16 10:59 - US-002
+- Implemented `backend/README.md` with API docs and Architecture overview.
+- Files changed: `backend/README.md`
+- **Learnings:**
+  - Documenting the SSE stream format (thought vs routing) is critical for frontend integration.
+  - Explicitly documenting how to extend the graph (add nodes) removes ambiguity for future agents.
+---
