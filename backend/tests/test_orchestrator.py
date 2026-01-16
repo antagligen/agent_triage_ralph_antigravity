@@ -24,7 +24,7 @@ def test_orchestrator_routes_to_agent(mock_config):
     mock_llm = MagicMock()
     mock_llm.invoke.return_value = AIMessage(content="network_specialist")
     
-    with patch("src.orchestrator.ChatOpenAI", return_value=mock_llm):
+    with patch("src.orchestrator.get_llm", return_value=mock_llm):
         orchestrator = get_orchestrator_node(mock_config)
         state = {"messages": [HumanMessage(content="My network is down")]}
         
@@ -40,7 +40,7 @@ def test_orchestrator_responds_directly(mock_config):
     mock_llm = MagicMock()
     mock_llm.invoke.return_value = AIMessage(content="DIRECT_RESPONSE Hello there")
     
-    with patch("src.orchestrator.ChatOpenAI", return_value=mock_llm):
+    with patch("src.orchestrator.get_llm", return_value=mock_llm):
         orchestrator = get_orchestrator_node(mock_config)
         state = {"messages": [HumanMessage(content="Hi")]}
         
@@ -57,7 +57,7 @@ def test_orchestrator_unknown_response(mock_config):
     mock_llm = MagicMock()
     mock_llm.invoke.return_value = AIMessage(content="I don't know")
     
-    with patch("src.orchestrator.ChatOpenAI", return_value=mock_llm):
+    with patch("src.orchestrator.get_llm", return_value=mock_llm):
         orchestrator = get_orchestrator_node(mock_config)
         state = {"messages": [HumanMessage(content="Random query")]}
         
@@ -85,8 +85,8 @@ def test_integration_routing_network_specialist(mock_config):
     
     mock_llm = FakeChatModel(response="network_specialist")
 
-    with patch("src.orchestrator.ChatOpenAI", return_value=mock_llm), \
-         patch("src.sub_agents.aci.ChatOpenAI", return_value=mock_llm):
+    with patch("src.orchestrator.get_llm", return_value=mock_llm), \
+         patch("src.sub_agents.aci.get_llm", return_value=mock_llm):
 
         from src.orchestrator import build_graph
         graph = build_graph(mock_config)

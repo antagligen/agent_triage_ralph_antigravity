@@ -1,0 +1,26 @@
+# Ralph Progress Log
+---
+## Codebase Patterns
+- One Task = One Chat Session
+- Always check out the correct branch before starting work
+- `load_config` is cached with `@lru_cache` to avoid I/O on every request
+- Pydantic models ensure strict typing for the configuration file
+- `src` needs `__init__.py` for pytest to correctly resolve imports
+- Streamlit uses `st.session_state` to maintain state across reruns
+- SSE streaming with `requests` requires `stream=True` and line-by-line parsing
+- Docker Compose networks allow service-to-service communication by service name
+
+## 2026-01-16 - US-002
+- Configured Docker Compose secrets for backend and frontend
+- Updated .gitignore to exclude secrets directory
+- **Learnings:**
+  - Docker Compose secrets are mounted at `/run/secrets/<secret_name>` by default
+  - Local file-based secrets require the file to exist on the host before starting services
+---
+
+
+## 2026-01-16 - US-003
+- Updated README.md to include instructions for setting up Docker secrets.
+- **Learnings:**
+  - Clear documentation for local secret setup is crucial for developer onboarding.
+---

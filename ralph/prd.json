@@ -42,7 +42,7 @@
                 "Typecheck passes"
             ],
             "priority": 4,
-            "passes": false,
+            "passes": true,
             "notes": ""
         },
         {
@@ -68,7 +68,7 @@
                 "all created unit tests pass"
             ],
             "priority": 6,
-            "passes": false,
+            "passes": true,
             "notes": ""
         }
     ]

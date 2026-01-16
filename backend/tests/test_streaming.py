@@ -24,7 +24,7 @@ def mock_config():
 
 @pytest.fixture
 def mock_llm():
-    with patch("src.orchestrator.ChatOpenAI") as mock:
+    with patch("src.orchestrator.get_llm") as mock:
         # Create a mock instance that returns an iterator for stream
         llm_instance = MagicMock()
         mock.return_value = llm_instance
@@ -45,7 +45,7 @@ def test_streaming_chat_endpoint(mock_config, mock_llm):
     # However, since we patched ChatOpenAI where it is imported (src.orchestrator), it should work if we import it there.
     # But src.main imports orchestrator inside the function.
     
-    with patch("src.orchestrator.ChatOpenAI") as mock_chat_cls:
+    with patch("src.orchestrator.get_llm") as mock_chat_cls:
         mock_instance = MagicMock()
         mock_chat_cls.return_value = mock_instance
         # The orchestrator logic calls invoke

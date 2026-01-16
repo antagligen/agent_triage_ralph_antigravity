@@ -31,9 +31,9 @@ class FakeChatModel(BaseChatModel):
         return "fake"
 
 def test_aci_agent_node_process(mock_config):
-    # Mock ChatOpenAI to avoid missing API key error
-    with patch("src.sub_agents.aci.ChatOpenAI") as mock_llm_cls:
-        mock_llm_cls.return_value = FakeChatModel()
+    # Mock get_llm to avoid missing API key error and return FakeChatModel
+    with patch("src.sub_agents.aci.get_llm") as mock_get_llm:
+        mock_get_llm.return_value = FakeChatModel()
         
         node = get_aci_agent_node(mock_config)
         

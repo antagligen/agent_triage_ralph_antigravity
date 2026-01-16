@@ -34,3 +34,18 @@
   - uvicorn imports pp directly, so if __name__ == __main__:  block runs only when executing script directly.
   - curl on Windows requires careful quoting for JSON.
 ---
+
+## 2026-01-16 16:00 - US-004
+- Added Mermaid state diagram to `backend/src/orchestrator.py` docstring.
+- Verified mypy checks pass for `backend/src`.
+- **Learnings:**
+  - `mypy` path configuration can be tricky when running from root vs subdirectory.
+---
+
+## 2026-01-16 16:15 - US-006
+- Validated all unit tests pass.
+- Updated ackend/tests to use correct mocks for get_llm.
+- **Learnings:**
+  - When switching from direct class instantiation to factory functions, mocks must be updated to target the factory or its return value.
+---
+

@@ -1,0 +1,49 @@
+{
+    "project": "Docker Entrypoint Secret Injection",
+    "branchName": "ralph/docker-entrypoint",
+    "description": "Bridge the gap between Docker Secrets and legacy applications by injecting them as environment variables.",
+    "userStories": [
+        {
+            "id": "US-001",
+            "title": "Create Entrypoint Script",
+            "description": "As a DevOps engineer, I want a `bash` entrypoint script that reads files from `/run/secrets/`, exports them as environment variables, and executes the command.",
+            "acceptanceCriteria": [
+                "Script uses `#!/bin/bash` interpreter",
+                "Checks if `/run/secrets/` directory exists (warn if missing, read if present)",
+                "Iterates through every file in the secrets directory",
+                "Exports filename as Key and content as Value (with trailing whitespace stripped)",
+                "Executes the passed command using `exec \"$@\"`",
+                "Typecheck passes"
+            ],
+            "priority": 1,
+            "passes": true,
+            "notes": ""
+        },
+        {
+            "id": "US-002",
+            "title": "Configure Docker Compose Secrets",
+            "description": "As a DevOps engineer, I want to update the `docker-compose.yml` file to define secrets and mount them into the relevant service containers so they are available at runtime.",
+            "acceptanceCriteria": [
+                "Define a top-level `secrets` block referencing local secret files",
+                "Files referenced in `secrets` block must be explicitly ignored in `.gitignore`",
+                "Update target service definition to include a `secrets` list",
+                "Ensure secret names in `services` match the top-level keys",
+                "Verify container builds and secret files appear in `/run/secrets/` inside the container"
+            ],
+            "priority": 2,
+            "passes": true,
+            "notes": "Ensure file permissions on host secret files are restricted (e.g., 600)."
+        },
+        {
+            "id": "US-003",
+            "title": "Configure Docker Compose Secrets",
+            "description": "Update the readme to include instructions for setting up secrets",
+            "acceptanceCriteria": [
+                "Update the readme to include instructions for setting up secrets"
+            ],
+            "priority": 3,
+            "passes": true,
+            "notes": ""
+        }
+    ]
+}
