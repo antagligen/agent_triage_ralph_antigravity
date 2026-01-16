@@ -1,24 +1,50 @@
-from typing import Optional
-from fastapi import FastAPI, Depends
+import asyncio
+import json
+import os
 from functools import lru_cache
-from dotenv import load_dotenv
+from pathlib import Path
+from typing import Optional
 
-load_dotenv()
+from dotenv import load_dotenv
+from fastapi import Depends, FastAPI
+from fastapi.responses import StreamingResponse
+from fastapi.staticfiles import StaticFiles
+from langchain_core.messages import HumanMessage
+
 from .config import AppConfig, load_config
+from .orchestrator import build_graph
+from .schemas import ChatRequest
 from .streaming import stream_graph_events
 
+# Load environment variables
+load_dotenv()
+
+# Constants
+BASE_DIR = Path(__file__).resolve().parent.parent
+STATIC_DIR = BASE_DIR / "static"
+CONFIG_PATH = BASE_DIR / "config.yaml"
+
+# Initialize App
 app = FastAPI(title="AI Troubleshooting Agent")
+
+# Mount Static Files
+if not STATIC_DIR.exists():
+    STATIC_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
 
 @lru_cache()
 def get_config() -> AppConfig:
-    # Resolve config path relative to the backend directory
-    base_dir = Path(__file__).resolve().parent.parent
-    config_path = base_dir / "config.yaml"
-    return load_config(str(config_path))
+    """
+    Cached configuration loader.
+    """
+    return load_config(str(CONFIG_PATH))
+
 
 @app.get("/health")
 def health_check():
     return {"status": "ok", "service": "ai-troubleshoot-agent"}
+
 
 @app.get("/config")
 def get_current_config(config: AppConfig = Depends(get_config)):
@@ -32,34 +58,12 @@ def get_current_config(config: AppConfig = Depends(get_config)):
         "sub_agents": [agent.name for agent in config.sub_agents]
     }
 
-from fastapi.responses import StreamingResponse
-from fastapi.staticfiles import StaticFiles
-import json
-import asyncio
-
-import os
-from pathlib import Path
-
-# Mount static files
-base_dir = Path(__file__).resolve().parent.parent
-static_dir = base_dir / "static"
-if not static_dir.exists():
-    # Fallback or create if not exists to prevent crash
-    static_dir.mkdir(parents=True, exist_ok=True)
-
-app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
-
-from .schemas import ChatRequest
-
-
 
 @app.post("/chat")
 async def chat(request: ChatRequest, config: AppConfig = Depends(get_config)):
     """
     Process a chat message through the LangGraph orchestrator with streaming.
     """
-    from .orchestrator import build_graph
-    from langchain_core.messages import HumanMessage
     
     # Check for overrides
     updated_kwargs = {}
@@ -70,11 +74,7 @@ async def chat(request: ChatRequest, config: AppConfig = Depends(get_config)):
         
     if updated_kwargs:
         # Create a copy with updated fields if overrides exist
-        # model_copy is deprecated in V2, using model_copy or copy depending on pydantic version
-        # Assuming Pydantic V2 given modern env, but checking typical usage.
-        # model_copy() is standard for V1/V2 compat in many places, but let's check imports.
-        # The file uses `from pydantic import BaseModel, Field`.
-        # Safe bet is model_copy(update=...)
+        # Using model_copy(update=...) for Pydantic V2 compatibility (and usually V1 compat too)
         config = config.model_copy(update=updated_kwargs)
 
     app_workflow = build_graph(config)
@@ -86,11 +86,13 @@ async def chat(request: ChatRequest, config: AppConfig = Depends(get_config)):
         media_type="text/event-stream"
     )
 
+
 if __name__ == "__main__":
     import uvicorn
-    # Load config once at startup to verify it's valid, otherwise crash
+    
+    # Verify config on startup
     try:
-        config = load_config()
+        config = load_config(str(CONFIG_PATH))
         print(f"Config loaded successfully. Orchestrator: {config.orchestrator_model}")
     except Exception as e:
         print(f"Failed to load config: {e}")
