@@ -1,3 +1,4 @@
+from typing import Optional
 from fastapi import FastAPI, Depends
 from functools import lru_cache
 from dotenv import load_dotenv
@@ -9,7 +10,10 @@ app = FastAPI(title="AI Troubleshooting Agent")
 
 @lru_cache()
 def get_config() -> AppConfig:
-    return load_config()
+    # Resolve config path relative to the backend directory
+    base_dir = Path(__file__).resolve().parent.parent
+    config_path = base_dir / "config.yaml"
+    return load_config(str(config_path))
 
 @app.get("/health")
 def health_check():
@@ -32,13 +36,24 @@ from fastapi.staticfiles import StaticFiles
 import json
 import asyncio
 
+import os
+from pathlib import Path
+
 # Mount static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
+base_dir = Path(__file__).resolve().parent.parent
+static_dir = base_dir / "static"
+if not static_dir.exists():
+    # Fallback or create if not exists to prevent crash
+    static_dir.mkdir(parents=True, exist_ok=True)
+
+app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
 from pydantic import BaseModel
 
 class ChatRequest(BaseModel):
     message: str
+    model_name: Optional[str] = None
+    model_provider: Optional[str] = None
 
 async def stream_graph_events(workflow, inputs):
     """
@@ -97,6 +112,22 @@ async def chat(request: ChatRequest, config: AppConfig = Depends(get_config)):
     from .orchestrator import build_graph
     from langchain_core.messages import HumanMessage
     
+    # Check for overrides
+    updated_kwargs = {}
+    if request.model_name:
+        updated_kwargs["orchestrator_model"] = request.model_name
+    if request.model_provider:
+        updated_kwargs["orchestrator_provider"] = request.model_provider
+        
+    if updated_kwargs:
+        # Create a copy with updated fields if overrides exist
+        # model_copy is deprecated in V2, using model_copy or copy depending on pydantic version
+        # Assuming Pydantic V2 given modern env, but checking typical usage.
+        # model_copy() is standard for V1/V2 compat in many places, but let's check imports.
+        # The file uses `from pydantic import BaseModel, Field`.
+        # Safe bet is model_copy(update=...)
+        config = config.model_copy(update=updated_kwargs)
+
     app_workflow = build_graph(config)
     
     inputs = {"messages": [HumanMessage(content=request.message)]}

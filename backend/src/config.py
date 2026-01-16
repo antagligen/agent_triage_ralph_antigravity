@@ -11,6 +11,7 @@ class SubAgentConfig(BaseModel):
 
 class AppConfig(BaseModel):
     orchestrator_model: str = Field(..., description="LLM model name for the orchestrator")
+    orchestrator_provider: str = Field(default="openai", description="Model provider (openai, google, gemini)")
     system_prompt: str = Field(..., description="System prompt for the orchestrator")
     sub_agents: List[SubAgentConfig] = Field(default_factory=list, description="Available sub-agents")
 

@@ -59,3 +59,4 @@ You operate in a "One Task = One Chat Session" loop. This ensures you always hav
 - Do NOT start multiple tasks in one session.
 - Always check `ralph/progress.txt` for previous learnings before starting work.
 - The current system this is being ran on is windows, so ALWAYS use powershell commands when doing terminal work.
+- ALWAYS use a virtual environment

@@ -46,4 +46,24 @@ def test_load_invalid_format():
     with pytest.raises(ValueError):
         load_config("test.txt")
         
+
     os.remove("test.txt")
+
+def test_load_gemini_config():
+    gemini_config_path = "gemini_config.yaml"
+    config_data = {
+        "orchestrator_model": "gemini-pro",
+        "orchestrator_provider": "google",
+        "system_prompt": "Gemini Prompt",
+        "sub_agents": []
+    }
+    with open(gemini_config_path, 'w') as f:
+        yaml.dump(config_data, f)
+    
+    try:
+        config = load_config(gemini_config_path)
+        assert config.orchestrator_model == "gemini-pro"
+        assert config.orchestrator_provider == "google"
+    finally:
+        if os.path.exists(gemini_config_path):
+            os.remove(gemini_config_path)
