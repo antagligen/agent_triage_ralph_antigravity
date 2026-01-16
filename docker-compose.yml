@@ -14,13 +14,11 @@ services:
     restart: unless-stopped
 
   frontend:
-    # build: ./frontend  # Uncomment when frontend Dockerfile exists
-    image: python:3.11-slim # Temporary placeholder or use a managed image if implementing properly
+    build: ./frontend
     container_name: ralph-frontend
     working_dir: /app
     volumes:
       - ./frontend:/app
-    command: echo "Frontend not implemented yet"
     ports:
       - "8501:8501"
     depends_on:
