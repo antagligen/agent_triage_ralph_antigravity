@@ -70,3 +70,13 @@
   - `st.rerun()` triggers a page refresh when provider changes to reset model selection
   - Streamlit selectbox index must be calculated from current session state
 ---
+## 2026-01-16T09:13 - US-006 (Sub-Agent Active Indicator)
+- Added `active_subagent` to `st.session_state` for tracking current sub-agent
+- Created `active_subagent_placeholder` using `st.empty()` for dynamic indicator
+- Updated routing event handler to set active sub-agent and display "🔀 Active: **{target}**"
+- Added `placeholder.empty()` call to clear indicator when response completes
+- Updated sidebar System Status to show active sub-agent name or "Idle"
+- **Learnings:**
+   - `st.empty()` is ideal for temporary status messages that need to clear
+   - Session state can track transient UI state across streaming events
+---
