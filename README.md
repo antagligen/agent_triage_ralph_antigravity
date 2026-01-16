@@ -38,6 +38,29 @@ The system consists of three main components:
     - **Frontend**: Open [http://localhost:8501](http://localhost:8501) in your browser.
     - **Backend API Docs**: Open [http://localhost:8000/docs](http://localhost:8000/docs).
 
+
+## Secrets Management
+
+This application uses Docker Secrets to securely manage sensitive information. Before running the application, you must create the necessary secret files locally.
+
+1.  **Create a `secrets` directory** in the project root (this directory is git-ignored):
+    ```bash
+    mkdir secrets
+    ```
+
+2.  **Create the secret files**:
+    - `secrets/backend_api_key.txt`: Contains the API key for backend service authentication.
+    - `secrets/frontend_secret.txt`: Contains the secret for the frontend application.
+
+    Example:
+    ```bash
+    echo "my-super-secret-backend-key" > secrets/backend_api_key.txt
+    echo "my-super-secret-frontend-key" > secrets/frontend_secret.txt
+    ```
+
+    > [!IMPORTANT]
+    > These files are mounted into the containers at runtime. Ensure you have created them **before** running `docker-compose up`.
+
 ## Architecture
 
 ### High-Level Data Flow
