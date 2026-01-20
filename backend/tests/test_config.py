@@ -3,7 +3,7 @@ import pytest
 from unittest.mock import patch, mock_open
 from pathlib import Path
 import logging
-from src.config import load_system_prompt, DEFAULT_PROMPTS
+from backend.src.config import load_system_prompt, DEFAULT_PROMPTS
 
 # Test data
 MOCK_AGENT_NAME = "test_agent"
@@ -26,7 +26,7 @@ def test_load_system_prompt_missing_file_with_default():
 
     with patch("pathlib.Path.exists", return_value=False):
         # Patch the logger on the module where it is defined/used
-        with patch("src.config.logger.warning") as mock_log:
+        with patch("backend.src.config.logger.warning") as mock_log:
             prompt = load_system_prompt(agent_name)
             assert prompt == DEFAULT_PROMPTS[agent_name]
             mock_log.assert_called_once()
