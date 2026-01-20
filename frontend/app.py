@@ -137,6 +137,24 @@ if prompt := st.chat_input("How can I help you troubleshoot?"):
                                     next_node = data.get("routing", "")
                                     thought_text += f"*Routing to: `{next_node}`*\n\n"
                                     thought_expander.markdown(thought_text)
+
+                                elif event_type == "triage_report":
+                                    # Handle Triage Report
+                                    root_cause = data.get("root_cause", "Unknown")
+                                    action = data.get("action", "No action specified")
+                                    details = data.get("details", "")
+                                    
+                                    # Format the report
+                                    report_md = f"""
+                                    ### 🚨 Triage Report
+                                    **Root Cause:** {root_cause}
+                                    
+                                    **Action:** {action}
+                                    
+                                    **Details:** {details}
+                                    """
+                                    full_response += report_md
+                                    message_placeholder.markdown(full_response)
                                 
                                 # We treat the actual message content as part of the thought stream 
                                 # if it comes from nodes, but usually the 'final' response 

@@ -2,8 +2,8 @@ import pytest
 from langchain_core.messages import HumanMessage, AIMessage
 from langchain_core.language_models import BaseChatModel
 from langchain_core.outputs import ChatResult, ChatGeneration
-from src.sub_agents.aci import get_aci_agent_node, aci_diag
-from src.config import AppConfig
+from backend.src.sub_agents.aci import get_aci_agent_node, aci_diag
+from backend.src.config import AppConfig
 from unittest.mock import MagicMock, patch
 
 @pytest.fixture
@@ -32,7 +32,7 @@ class FakeChatModel(BaseChatModel):
 
 def test_aci_agent_node_process(mock_config):
     # Mock get_llm to avoid missing API key error and return FakeChatModel
-    with patch("src.sub_agents.aci.get_llm") as mock_get_llm:
+    with patch("backend.src.sub_agents.aci.get_llm") as mock_get_llm:
         mock_get_llm.return_value = FakeChatModel()
         
         node = get_aci_agent_node(mock_config)
@@ -44,4 +44,5 @@ def test_aci_agent_node_process(mock_config):
         }
         
         result = node(state)
-        assert "messages" in result
+        assert result.summary == "Diagnostic completed"
+        assert result.status == "SUCCESS"

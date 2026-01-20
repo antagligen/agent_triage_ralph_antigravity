@@ -59,11 +59,16 @@ def get_current_config(config: AppConfig = Depends(get_config)):
     }
 
 
+# Global checkpointer for persistence
+from langgraph.checkpoint.memory import MemorySaver
+checkpointer = MemorySaver()
+
 @app.post("/chat")
 async def chat(request: ChatRequest, config: AppConfig = Depends(get_config)):
     """
     Process a chat message through the LangGraph orchestrator with streaming.
     """
+    import uuid
     
     # Check for overrides
     updated_kwargs = {}
@@ -73,16 +78,25 @@ async def chat(request: ChatRequest, config: AppConfig = Depends(get_config)):
         updated_kwargs["orchestrator_provider"] = request.model_provider
         
     if updated_kwargs:
-        # Create a copy with updated fields if overrides exist
-        # Using model_copy(update=...) for Pydantic V2 compatibility (and usually V1 compat too)
         config = config.model_copy(update=updated_kwargs)
 
-    app_workflow = build_graph(config)
+    # Use global checkpointer so state is persisted across builds (if we cached graph)
+    # But current design rebuilds graph on config change. 
+    # We pass the checkpointer to valid it's used.
+    app_workflow = build_graph(config, checkpointer=checkpointer)
+    
+    # Generate or reuse thread_id (for now, simple random one for every new chat request, 
+    # unless we want to support conversation history from frontend eventually)
+    # Ideally frontend should send a conversation/thread ID. Use a random one for now.
+    thread_id = str(uuid.uuid4())
     
     inputs = {"messages": [HumanMessage(content=request.message)]}
     
+    # Pass thread_id to the runner
+    run_config = {"configurable": {"thread_id": thread_id}}
+    
     return StreamingResponse(
-        stream_graph_events(app_workflow, inputs),
+        stream_graph_events(app_workflow, inputs, run_config),
         media_type="text/event-stream"
     )
 

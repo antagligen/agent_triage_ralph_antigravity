@@ -51,6 +51,15 @@ The stream yields events of type `thought` or `routing`.
   }
   ```
 
+- **Event: `triage_report`**: The final diagnosis report.
+  ```json
+  data: {
+    "root_cause": "Firewall blocking traffic",
+    "details": ["Allow rule missing for 10.0.0.1"],
+    "action": "Add allow rule"
+  }
+  ```
+
 ### 2. Health Check
 `GET /health`
 
@@ -86,14 +95,17 @@ Sensitive keys (like API keys) should be stored in a `.env` file in the `backend
 
 The core logic resides in `src/orchestrator.py`.
 
-1.  **State**: `AgentState` tracks `messages` (history) and `next_node` (routing decision).
+1.  **State**: `AgentState` tracks `messages` (history), `sub_agent_results` (parallel data collection), and `triage_report`.
 2.  **Orchestrator Node**:
-    - Receives user input.
-    - prompting includes descriptions of all available sub-agents from `config.yaml`.
-    - Decides whether to answer directly or route to a sub-agent.
-3.  **Graph**:
-    - The `StateGraph` connects the `orchestrator` to sub-agent nodes.
-    - Conditional edges use the `router` function to determine the next step.
+    - Validates input (checks for IPs).
+    - Routes to `sub_agents` (ACI, Palo Alto, Infoblox) in **parallel** ("fan-out").
+3.  **Sub-Agents**:
+    - Return structured `SubAgentResult` (Status, Raw Data, Summary).
+4.  **Triage Node**:
+    - Aggregates results from all agents.
+    - Generates a final `TriageReport` ("fan-in").
+5.  **Graph**:
+    - Uses `StateGraph` with conditional edges and safe persistence using `MemorySaver`.
 
 ## 🔌 Extending the Backend
 

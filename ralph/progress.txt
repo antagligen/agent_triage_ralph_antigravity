@@ -9,3 +9,67 @@
 - Streamlit uses `st.session_state` to maintain state across reruns
 - SSE streaming with `requests` requires `stream=True` and line-by-line parsing
 - Docker Compose networks allow service-to-service communication by service name
+
+## 2026-01-20 - US-001
+- Implemented `backend/src/models.py` with `SubAgentResult`, `OrchestratorDecision`, `TriageReport`.
+- Verified using Pydantic runtime validation script.
+- **Learnings:**
+  - Pydantic's `BaseModel.json()` is deprecated in v2 but still works in v1. Used `json()` for now, but should use `model_dump_json()` in v2.
+---
+
+## 2026-01-20 - US-002
+- Refactored `aci.py` to return `SubAgentResult`.
+- Created `infoblox.py` and `palo_alto.py` with mock tools and `SubAgentResult` return.
+- Verified with `test_agents.py` (mocked LLM) and `mypy` type checking.
+- **Learnings:**
+  - `ChatOpenAI` requires `OPENAI_API_KEY` even when mocking if not handled carefully; patched `create_react_agent` to avoid calls.
+  - Sub-agents now return structured results, ready for orchestration graph.
+---
+
+## 2026-01-20 - US-003
+- Implemented `backend/src/orchestrator.py` with `orchestrator_node`.
+- Added IP validation: Missing IPs -> Route to Infoblox.
+- Added Intelligent Routing: Present IPs -> Route to Sub-Agents (via LLM decision).
+- Verified with `test_orchestrator.py` mocking LLM and config.
+- **Learnings:**
+  - `mypy` requires explicit casting for `Literal` types when retrieving from string dictionaries.
+  - `with_structured_output` provides type-safe LLM outputs, but fallback handling is crucial for robustness.
+---
+
+## 2026-01-20 - US-004
+- Refactored `orchestrator.py` to support parallel execution using LangGraph.
+- Updated `AgentState` with `sub_agent_results` and reducer.
+- Added explicit nodes for `aci`, `palo_alto`, `infoblox` with parallel routing.
+- Validated with `test_orchestrator_parallel.py` and `mypy`.
+- **Learnings:**
+  - `LangGraph` reducers like `operator.add` are essential for parallel writes to the state.
+  - Patching `get_llm` globally in `llm_factory` is more reliable for testing sub-components that import it.
+---
+
+## 2026-01-20 - US-005
+- Implemented `backend/src/sub_agents/triage.py` with `triage_node`.
+- Updated `backend/src/orchestrator.py` to route sub-agents to `triage` node.
+- Added `TriageReport` to `AgentState`.
+- Verified with `test_triage.py` and `mypy`.
+- **Learnings:**
+  - Separating data aggregation (Sub-Agents) from analysis (Triage) allows for cleaner LLM prompts and specific error handling.
+---
+
+## 2026-01-20 - US-006
+- Updated backend to use MemorySaver for state persistence.
+- Integrated orchestrator graph into FastAPI.
+- Updated frontend to display TriageReport.
+- Verified with integration tests.
+- **Learnings:**
+  - Checkpoint savers in LangGraph need to be careful with global vs request-scoped if persistence across restarts is needed (MemorySaver is ephemeral).
+  - Frontend event stream handling requires explicit type checks for custom events like 'triage_report'.
+---
+
+## 2026-01-20 - US-007
+- Refactored codebase, moved tests to `backend/tests`, and unified imports (`backend.src`).
+- Updated `backend/README.md` and `streaming.py` to match new architecture.
+- Verified with full test suite (22 passed).
+- **Learnings:**
+  - Persistent test organization (separate `tests` folder vs `src`) requires careful import management (`backend.src`).
+  - Integration tests mocking complex objects (`OrchestratorDecision`) must ensure serialization compatibility (dict vs object) in consumers (`streaming.py`).
+---
