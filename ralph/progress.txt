@@ -35,3 +35,13 @@
   - `mypy` requires explicit casting for `Literal` types when retrieving from string dictionaries.
   - `with_structured_output` provides type-safe LLM outputs, but fallback handling is crucial for robustness.
 ---
+
+## 2026-01-20 - US-004
+- Refactored `orchestrator.py` to support parallel execution using LangGraph.
+- Updated `AgentState` with `sub_agent_results` and reducer.
+- Added explicit nodes for `aci`, `palo_alto`, `infoblox` with parallel routing.
+- Validated with `test_orchestrator_parallel.py` and `mypy`.
+- **Learnings:**
+  - `LangGraph` reducers like `operator.add` are essential for parallel writes to the state.
+  - Patching `get_llm` globally in `llm_factory` is more reliable for testing sub-components that import it.
+---
