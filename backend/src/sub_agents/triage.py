@@ -2,7 +2,7 @@ from typing import List, Dict, Any, cast
 from langchain_core.messages import SystemMessage, HumanMessage
 from langchain_core.language_models.chat_models import BaseChatModel
 
-from ..config import AppConfig
+from ..config import AppConfig, load_system_prompt
 from ..llm_factory import get_llm
 from ..models import TriageReport, SubAgentResult
 
@@ -44,14 +44,7 @@ def get_triage_node(config: AppConfig):
         success_text = "\n---\n".join(success_summaries) if success_summaries else "No successful results."
         failure_text = "\n---\n".join(failure_summaries) if failure_summaries else "None."
         
-        system_prompt = (
-            "You are a Senior Site Reliability Engineer (SRE). "
-            "Your task is to analyze the following connectivity triage reports from various sub-agents "
-            "and determine the root cause of the issue.\n\n"
-            "IMPORTANT: If any agents failed to execute, you MUST mention them in your analysis. "
-            "Explain that data from those sources is unavailable and recommend manual investigation for those areas.\n\n"
-            "Provide a concise Root Cause, Detailed Explanation, and Recommended Action."
-        )
+        system_prompt = load_system_prompt("triage")
         
         user_content = (
             f"Incident Data: {incident_data}\n\n"
