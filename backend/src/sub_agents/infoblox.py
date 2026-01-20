@@ -1,44 +1,36 @@
 from typing import List, Annotated
 from langchain_core.tools import tool
-from langchain_core.messages import BaseMessage, HumanMessage
+from langchain_core.messages import BaseMessage
 from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import create_react_agent
 from ..config import AppConfig
 from ..llm_factory import get_llm
-
 from ..models import SubAgentResult, AgentStatus
-
 
 # Mocked Tools
 @tool
-def aci_diag(target: str) -> str:
-    """Run diagnostics on a Cisco ACI target (simulated)."""
-    return f"Diagnostics for {target}: Health Score=95, Faults=0. Everything looks normal on the fabric."
+def get_ip_info(ip_address: str) -> str:
+    """Retrieve details about an IP address from Infoblox."""
+    return f"IP {ip_address} is assigned to host 'web-server-01' in subnet '10.0.0.0/24'. Status: Used."
 
 @tool
-def ping(target: str) -> str:
-    """Ping a network target."""
-    return f"Ping to {target} successful. RTT=2ms."
+def check_dns(hostname: str) -> str:
+    """Check DNS records for a hostname."""
+    return f"DNS record for {hostname}: A record points to 10.0.0.15. TTL: 3600."
 
-@tool
-def traceroute(target: str) -> str:
-    """Traceroute to a network target."""
-    return f"Traceroute to {target}: 1 hop, directly connected."
-
-def get_aci_agent_node(config: AppConfig):
+def get_infoblox_agent_node(config: AppConfig):
     """
-    Creates the Cisco ACI sub-agent node.
+    Creates the Infoblox sub-agent node.
     """
-    tools = [aci_diag, ping, traceroute]
+    tools = [get_ip_info, check_dns]
 
     llm = get_llm(config.orchestrator_provider, config.orchestrator_model, temperature=0)
     
     agent = create_react_agent(llm, tools=tools)
     
-    def aci_node(state) -> SubAgentResult:
+    def infoblox_node(state) -> SubAgentResult:
         try:
             result = agent.invoke(state)
-            # Extract the last message as the summary
             last_msg = result["messages"][-1]
             summary = last_msg.content if hasattr(last_msg, "content") else str(last_msg)
             
@@ -50,8 +42,8 @@ def get_aci_agent_node(config: AppConfig):
         except Exception as e:
             return SubAgentResult(
                 raw_data={"error": str(e)},
-                summary=f"Error executing ACI agent: {str(e)}",
+                summary=f"Error executing Infoblox agent: {str(e)}",
                 status=AgentStatus.FAILURE
             )
 
-    return aci_node
+    return infoblox_node
