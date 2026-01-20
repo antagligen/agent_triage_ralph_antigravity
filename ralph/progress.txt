@@ -27,3 +27,21 @@
   - `Path(__file__).resolve().parent.parent / "system_prompts"` works for Docker `/app/src` structure
 ---
 
+## 2026-01-20T21:12 - US-003 Update Orchestrator to Use Configurable Prompt
+- Updated `backend/src/orchestrator.py` to import and use `load_system_prompt('orchestrator')`
+- Replaced `config.system_prompt` with configurable prompt loading
+- Prompt is now read from `backend/system_prompts/orchestrator.txt`
+- Files changed: `backend/src/orchestrator.py`
+- **Learnings:**
+  - The orchestrator prompt can now be hot-reloaded from the text file
+  - Fallback mechanism ensures backward compatibility
+---
+
+## 2026-01-20T21:23 - US-004 Update Sub-Agents with Configurable Prompts
+- Updated aci.py, infoblox.py, palo_alto.py to use load_system_prompt
+- Passed system prompt to create_react_agent via state_modifier
+- Validated with mypy
+- Files changed: backend/src/sub_agents/aci.py, backend/src/sub_agents/infoblox.py, backend/src/sub_agents/palo_alto.py
+- **Learnings:**
+  - create_react_agent accepts state_modifier for system prompts
+---

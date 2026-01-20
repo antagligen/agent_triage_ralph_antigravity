@@ -41,8 +41,8 @@
                 "Typecheck passes"
             ],
             "priority": 3,
-            "passes": false,
-            "notes": ""
+            "passes": true,
+            "notes": "Updated orchestrator.py to use load_system_prompt('orchestrator') instead of config.system_prompt"
         },
         {
             "id": "US-004",
@@ -55,8 +55,8 @@
                 "Typecheck passes"
             ],
             "priority": 4,
-            "passes": false,
-            "notes": ""
+            "passes": true,
+            "notes": "Updated aci.py, infoblox.py, palo_alto.py to use load_system_prompt() and create_react_agent(state_modifier=system_prompt)"
         },
         {
             "id": "US-005",
@@ -82,6 +82,17 @@
                 "Typecheck passes"
             ],
             "priority": 6,
+            "passes": false,
+            "notes": ""
+        },
+        {
+            "id": "US-007",
+            "title": "Update backend/readme on how to use this new feature.",
+            "description": "As a developer, I want know how to edit the system prompts.",
+            "acceptanceCriteria": [
+                "Readme updated with instructions on how to edit the system prompts."
+            ],
+            "priority": 7,
             "passes": false,
             "notes": ""
         }

@@ -2,7 +2,7 @@ from typing import List, Annotated
 from langchain_core.tools import tool
 from langchain_core.messages import BaseMessage
 from langgraph.prebuilt import create_react_agent
-from ..config import AppConfig
+from ..config import AppConfig, load_system_prompt
 from ..llm_factory import get_llm
 from ..models import SubAgentResult, AgentStatus
 
@@ -25,7 +25,8 @@ def get_palo_alto_agent_node(config: AppConfig):
 
     llm = get_llm(config.orchestrator_provider, config.orchestrator_model, temperature=0)
     
-    agent = create_react_agent(llm, tools=tools)
+    system_prompt = load_system_prompt("palo_alto")
+    agent = create_react_agent(llm, tools=tools, state_modifier=system_prompt)
     
     def palo_node(state) -> SubAgentResult:
         try:
