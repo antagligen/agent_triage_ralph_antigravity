@@ -1,0 +1,22 @@
+exclude: '^archive/'
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.4.0
+    hooks:
+    -   id: trailing-whitespace
+    -   id: end-of-file-fixer
+    -   id: check-yaml
+    -   id: check-added-large-files
+-   repo: local
+    hooks:
+    -   id: mypy
+        name: mypy
+        entry: python -m mypy --config-file mypy.ini
+        language: system
+        types: [python]
+    -   id: pytest
+        name: pytest
+        entry: python -m pytest -c pytest.ini
+        language: system
+        pass_filenames: false
+        always_run: true

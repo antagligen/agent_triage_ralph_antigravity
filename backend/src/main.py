@@ -69,32 +69,32 @@ async def chat(request: ChatRequest, config: AppConfig = Depends(get_config)):
     Process a chat message through the LangGraph orchestrator with streaming.
     """
     import uuid
-    
+
     # Check for overrides
     updated_kwargs = {}
     if request.model_name:
         updated_kwargs["orchestrator_model"] = request.model_name
     if request.model_provider:
         updated_kwargs["orchestrator_provider"] = request.model_provider
-        
+
     if updated_kwargs:
         config = config.model_copy(update=updated_kwargs)
 
     # Use global checkpointer so state is persisted across builds (if we cached graph)
-    # But current design rebuilds graph on config change. 
+    # But current design rebuilds graph on config change.
     # We pass the checkpointer to valid it's used.
     app_workflow = build_graph(config, checkpointer=checkpointer)
-    
-    # Generate or reuse thread_id (for now, simple random one for every new chat request, 
+
+    # Generate or reuse thread_id (for now, simple random one for every new chat request,
     # unless we want to support conversation history from frontend eventually)
     # Ideally frontend should send a conversation/thread ID. Use a random one for now.
     thread_id = str(uuid.uuid4())
-    
+
     inputs = {"messages": [HumanMessage(content=request.message)]}
-    
+
     # Pass thread_id to the runner
     run_config = {"configurable": {"thread_id": thread_id}}
-    
+
     return StreamingResponse(
         stream_graph_events(app_workflow, inputs, run_config),
         media_type="text/event-stream"
@@ -103,7 +103,7 @@ async def chat(request: ChatRequest, config: AppConfig = Depends(get_config)):
 
 if __name__ == "__main__":
     import uvicorn
-    
+
     # Verify config on startup
     try:
         config = load_config(str(CONFIG_PATH))
@@ -111,5 +111,5 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"Failed to load config: {e}")
         exit(1)
-        
+
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -27,13 +27,13 @@ def test_chat_default_model(mock_orch_get_llm, mock_aci_get_llm, client):
     mock_llm = MagicMock()
     mock_llm.invoke.return_value.content = "Response"
     mock_llm.invoke.return_value.type = "ai"
-    
+
     # Setup both mocks
     mock_orch_get_llm.return_value = mock_llm
     mock_aci_get_llm.return_value = mock_llm
 
     response = client.post("/chat", json={"message": "hello"})
-    
+
     assert response.status_code == 200
     # Check that get_llm was called with defaults for orchestrator
     mock_orch_get_llm.assert_called_with("openai", "default-model", temperature=0)
@@ -45,12 +45,12 @@ def test_chat_override_model(mock_orch_get_llm, mock_aci_get_llm, client):
     mock_llm = MagicMock()
     mock_llm.invoke.return_value.content = "Response"
     mock_llm.invoke.return_value.type = "ai"
-    
+
     mock_orch_get_llm.return_value = mock_llm
     mock_aci_get_llm.return_value = mock_llm
 
     response = client.post("/chat", json={"message": "hello", "model_name": "gpt-4"})
-    
+
     assert response.status_code == 200
     mock_orch_get_llm.assert_called_with("openai", "gpt-4", temperature=0)
 
@@ -61,11 +61,11 @@ def test_chat_override_provider(mock_orch_get_llm, mock_aci_get_llm, client):
     mock_llm = MagicMock()
     mock_llm.invoke.return_value.content = "Response"
     mock_llm.invoke.return_value.type = "ai"
-    
+
     mock_orch_get_llm.return_value = mock_llm
     mock_aci_get_llm.return_value = mock_llm
 
     response = client.post("/chat", json={"message": "hello", "model_provider": "gemini", "model_name": "gemini-pro"})
-    
+
     assert response.status_code == 200
     mock_orch_get_llm.assert_called_with("gemini", "gemini-pro", temperature=0)

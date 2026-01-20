@@ -72,7 +72,7 @@ graph LR
     FE -->|HTTP Request / SSE :8000| BE["Backend (FastAPI)"]
     BE -->|Invokes| Orch["Orchestrator (LangGraph)"]
     Orch -->|Queries| LLM[LLM Provider]
-    
+
     %% Define Subgraph
     subgraph Docker ["Docker Network"]
         direction LR
@@ -100,12 +100,12 @@ The backend uses **LangGraph** to orchestrate the agent's behavior.
 ```mermaid
 graph TD
     Start([Start]) --> Router{Router}
-    
+
     Router -->|General Query| DirectResp[Direct Response]
     Router -->|Troubleshooting| Tools[Tool Execution]
-    
+
     Tools -->|Result| Agent[Agent Reasoning]
     Agent --> Router
-    
+
     DirectResp --> End([End])
 ```

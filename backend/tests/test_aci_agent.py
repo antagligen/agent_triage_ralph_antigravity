@@ -9,7 +9,7 @@ from unittest.mock import MagicMock, patch
 @pytest.fixture
 def mock_config():
     return AppConfig(
-        orchestrator_model="gpt-3.5-turbo", 
+        orchestrator_model="gpt-3.5-turbo",
         system_prompt="sys prompt",
         sub_agents=[]
     )
@@ -22,7 +22,7 @@ def test_aci_diag_tool():
 class FakeChatModel(BaseChatModel):
     def _generate(self, messages, stop=None, run_manager=None, **kwargs):
         return ChatResult(generations=[ChatGeneration(message=AIMessage(content="Diagnostic completed"))])
-    
+
     def bind_tools(self, tools, **kwargs):
         return self
 
@@ -34,15 +34,15 @@ def test_aci_agent_node_process(mock_config):
     # Mock get_llm to avoid missing API key error and return FakeChatModel
     with patch("backend.src.sub_agents.aci.get_llm") as mock_get_llm:
         mock_get_llm.return_value = FakeChatModel()
-        
+
         node = get_aci_agent_node(mock_config)
-        
+
         # Simulate a state passed from orchestrator
         state = {
             "messages": [HumanMessage(content="Check diagnostics for Leaf-101")],
             "next_node": "network_specialist"
         }
-        
+
         result = node(state)
         assert result.summary == "Diagnostic completed"
         assert result.status == "SUCCESS"
@@ -61,15 +61,14 @@ def test_aci_agent_loads_dynamic_tools_mocked(mock_load, mock_exists, mock_confi
         "method": "GET",
         "parameters": []
     }]
-    
+
     with patch("backend.src.sub_agents.aci.create_react_agent") as mock_create_agent, \
          patch("backend.src.sub_agents.aci.get_llm"):
-         
+
         get_aci_agent_node(mock_config)
-        
+
         args, kwargs = mock_create_agent.call_args
         tools = kwargs.get("tools")
         tool_names = [t.name for t in tools]
-        
-        assert "mocked_dynamic_tool" in tool_names
 
+        assert "mocked_dynamic_tool" in tool_names

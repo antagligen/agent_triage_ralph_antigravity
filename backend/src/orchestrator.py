@@ -38,7 +38,7 @@ def get_orchestrator_node(config: AppConfig):
     def orchestrator_node(state: AgentState):
         messages = state["messages"]
         incident_data = state.get("incident_data", {})
-        
+
         source_ip = incident_data.get("source_ip")
         destination_ip = incident_data.get("destination_ip")
 
@@ -60,9 +60,9 @@ def get_orchestrator_node(config: AppConfig):
             f"The user has provided sufficient IP information. Analyze the request to confirm if we should proceed with firewall checks.\n"
             f"If standard diagnostics are needed, route to 'aci' and 'palo_alto'.\n"
         )
-        
+
         structured_llm = llm.with_structured_output(OrchestratorDecision)
-        
+
         try:
             decision = structured_llm.invoke([SystemMessage(content=system_message)] + list(messages))  # type: ignore
         except Exception as e:
@@ -84,13 +84,13 @@ def build_graph(config: AppConfig, checkpointer=None):
     Builds the LangGraph state graph.
     """
     workflow = StateGraph(AgentState)
-    
+
     # 1. Create Nodes
     orchestrator = get_orchestrator_node(config)
-    
+
     # Sub-agent factories return a callable `node(state) -> SubAgentResult`.
     # We need to wrap them to return `{"sub_agent_results": [result]}` compatible with AgentState.
-    
+
     def wrap_sub_agent(agent_func):
         def wrapped_node(state: AgentState):
             result = agent_func(state)
@@ -100,17 +100,17 @@ def build_graph(config: AppConfig, checkpointer=None):
     infoblox_node = wrap_sub_agent(get_infoblox_agent_node(config))
     aci_node = wrap_sub_agent(get_aci_agent_node(config))
     palo_alto_node = wrap_sub_agent(get_palo_alto_agent_node(config))
-    
+
     workflow.add_node("orchestrator", orchestrator)
     workflow.add_node("infoblox", infoblox_node)
     workflow.add_node("aci", aci_node)
     workflow.add_node("palo_alto", palo_alto_node)
-    
+
     triage = get_triage_node(config)
     workflow.add_node("triage", triage)
-    
+
     workflow.set_entry_point("orchestrator")
-    
+
     # 2. Routing Logic
     def fan_out_router(state: AgentState) -> List[str]:
         """
@@ -119,23 +119,23 @@ def build_graph(config: AppConfig, checkpointer=None):
         """
         decision = state["decision"]
         next_steps = decision.next_steps
-        
+
         nodes_to_run = []
-        
+
         # specific string mapping or simple existence check
         if "infoblox" in next_steps:
             nodes_to_run.append("infoblox")
-        
+
         if "aci" in next_steps or "sub_agents" in next_steps: # 'sub_agents' generic catch-all
              nodes_to_run.append("aci")
-             
+
         if "palo_alto" in next_steps or "sub_agents" in next_steps:
              nodes_to_run.append("palo_alto")
-        
+
         # If nothing matched but we have output, default to END to avoid infinite loop or error
         if not nodes_to_run:
             return [END]
-            
+
         return nodes_to_run
 
     workflow.add_conditional_edges(
@@ -144,13 +144,13 @@ def build_graph(config: AppConfig, checkpointer=None):
         # In LangGraph v0.2+, simpler conditional edges don't always strict map if returning list of nodes?
         # Actually checking docs: if returning list of keys, no map needed if keys exist.
         # But safest is to provide the map for inspection/visualization.
-        ["infoblox", "aci", "palo_alto", END] 
+        ["infoblox", "aci", "palo_alto", END]
     )
-    
+
     # 3. Fan-in (Aggregation)
-    # After sub-agents run, where do they go? 
+    # After sub-agents run, where do they go?
     # For now, back to END. In US-005 (Triage), we will route them to 'triage'.
-    
+
     workflow.add_edge("infoblox", "triage")
     workflow.add_edge("aci", "triage")
     workflow.add_edge("palo_alto", "triage")
@@ -162,5 +162,3 @@ def build_graph(config: AppConfig, checkpointer=None):
     # 4. Persistence
     # Use passed checkpointer or default to None
     return workflow.compile(checkpointer=checkpointer)
-
-

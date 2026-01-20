@@ -21,10 +21,10 @@ DEFAULT_PROMPTS = {
 def load_system_prompt(agent_name: str) -> str:
     """
     Loads a system prompt from backend/system_prompts/{agent_name}.txt.
-    
+
     Args:
         agent_name: Name of the agent (orchestrator, aci, infoblox, palo_alto, triage)
-        
+
     Returns:
         The prompt text from the file, or a default prompt if file not found.
     """
@@ -32,9 +32,9 @@ def load_system_prompt(agent_name: str) -> str:
     # This works whether we're running from /app/src or /app
     current_dir = Path(__file__).resolve().parent  # backend/src
     prompts_dir = current_dir.parent / "system_prompts"  # backend/system_prompts
-    
+
     prompt_file = prompts_dir / f"{agent_name}.txt"
-    
+
     if prompt_file.exists():
         try:
             content = prompt_file.read_text(encoding="utf-8").strip()
@@ -44,7 +44,7 @@ def load_system_prompt(agent_name: str) -> str:
             logger.warning(f"Error reading prompt file for '{agent_name}': {e}")
     else:
         logger.warning(f"System prompt file not found: {prompt_file}")
-    
+
     # Return default prompt
     default = DEFAULT_PROMPTS.get(agent_name, f"You are a helpful {agent_name} agent.")
     logger.info(f"Using default prompt for '{agent_name}'")
@@ -94,14 +94,14 @@ def load_config(path: str = "config.yaml") -> AppConfig:
             data = json.load(f)
         else:
             raise ValueError("Configuration file must be .yaml, .yml, or .json")
-    
+
     # Load devices config if available
     # Ideally this path should be relative to the config file or absolute
     # For now, we assume it's at the project root/config/devices.yaml
-    # In docker, it will be at /app/config/devices.yaml if mounted, 
-    # but we are running from /app/src usually. 
+    # In docker, it will be at /app/config/devices.yaml if mounted,
+    # but we are running from /app/src usually.
     # Let's check typical locations.
-    
+
     devices_path = "config/devices.yaml"
     # If running in backend/, it might be ../config/devices.yaml
     if not os.path.exists(devices_path):
@@ -117,11 +117,11 @@ def load_config(path: str = "config.yaml") -> AppConfig:
                  devices_path = potential_path
 
     devices = load_devices_config(devices_path)
-    
+
     config = AppConfig(**data)
     if devices:
         config.devices = devices
-        
+
     return config
 
 def get_aci_credentials():
@@ -130,8 +130,8 @@ def get_aci_credentials():
     """
     username = os.getenv("ACI_USERNAME")
     password = os.getenv("ACI_PASSWORD")
-    
+
     if not username or not password:
         raise ValueError("ACI_USERNAME and ACI_PASSWORD environment variables must be set.")
-        
+
     return username, password

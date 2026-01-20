@@ -249,17 +249,17 @@ def my_custom_tool(param: str) -> str:
 
 def get_my_agent_node(config: AppConfig):
     """Factory function to create the agent node."""
-    
+
     tools = [my_custom_tool]
     llm = get_llm(config.orchestrator_provider, config.orchestrator_model, temperature=0)
     agent = create_react_agent(llm, tools=tools)
-    
+
     def my_agent_node(state) -> SubAgentResult:
         try:
             result = agent.invoke(state)
             last_msg = result["messages"][-1]
             summary = last_msg.content if hasattr(last_msg, "content") else str(last_msg)
-            
+
             return SubAgentResult(
                 agent_name="my_agent",
                 raw_data={"messages": [m.content for m in result["messages"]]},
@@ -273,7 +273,7 @@ def get_my_agent_node(config: AppConfig):
                 summary=f"Error: {str(e)}",
                 status=AgentStatus.FAILURE
             )
-    
+
     return my_agent_node
 ```
 

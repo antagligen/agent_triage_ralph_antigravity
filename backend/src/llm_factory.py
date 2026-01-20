@@ -20,7 +20,7 @@ def get_llm(provider: str, model_name: str, temperature: float = 0) -> BaseChatM
         ValueError: If the provider is not supported.
     """
     provider = provider.lower()
-    
+
     if provider == "openai":
         return ChatOpenAI(model=model_name, temperature=temperature)
     elif provider in ["google", "gemini"]:

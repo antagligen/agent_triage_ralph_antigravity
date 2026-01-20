@@ -1,4 +1,5 @@
 import pytest
+from typing import Dict, Any
 from unittest.mock import MagicMock, patch
 from backend.src.sub_agents.triage import get_triage_node
 from backend.src.models import SubAgentResult, AgentStatus, TriageReport
@@ -18,11 +19,11 @@ def test_triage_node_success(mock_get_llm, mock_config):
     # Setup Mock LLM
     mock_llm_instance = MagicMock()
     mock_get_llm.return_value = mock_llm_instance
-    
+
     # Mock structured output
     mock_structured_llm = MagicMock()
     mock_llm_instance.with_structured_output.return_value = mock_structured_llm
-    
+
     expected_report = TriageReport(
         root_cause="Firewall Rule Block",
         details="Traffic blocked by Palo Alto firewall rule ID 123",
@@ -34,7 +35,7 @@ def test_triage_node_success(mock_get_llm, mock_config):
     triage_node = get_triage_node(mock_config)
 
     # Input State
-    state = {
+    state: Dict[str, Any] = {
         "sub_agent_results": [
             SubAgentResult(
                 agent_name="palo_alto",
@@ -62,7 +63,7 @@ def test_triage_node_failure_handling(mock_get_llm, mock_config):
     mock_get_llm.return_value = mock_llm_instance
     mock_structured_llm = MagicMock()
     mock_llm_instance.with_structured_output.return_value = mock_structured_llm
-    
+
     # Simulate LLM failure
     mock_structured_llm.invoke.side_effect = Exception("API connection failed")
 
@@ -70,7 +71,7 @@ def test_triage_node_failure_handling(mock_get_llm, mock_config):
     triage_node = get_triage_node(mock_config)
 
     # Input State
-    state = {
+    state: Dict[str, Any] = {
         "sub_agent_results": [],
         "incident_data": {}
     }
@@ -92,7 +93,7 @@ def test_triage_node_partial_failure(mock_get_llm, mock_config):
     mock_get_llm.return_value = mock_llm_instance
     mock_structured_llm = MagicMock()
     mock_llm_instance.with_structured_output.return_value = mock_structured_llm
-    
+
     expected_report = TriageReport(
         root_cause="Partial Data - ACI Unreachable",
         details="Based on available Palo Alto data. ACI agent failed.",
@@ -104,7 +105,7 @@ def test_triage_node_partial_failure(mock_get_llm, mock_config):
     triage_node = get_triage_node(mock_config)
 
     # Input State with mixed success/failure
-    state = {
+    state: Dict[str, Any] = {
         "sub_agent_results": [
             SubAgentResult(
                 agent_name="palo_alto",
@@ -128,14 +129,13 @@ def test_triage_node_partial_failure(mock_get_llm, mock_config):
     # Verify
     assert "triage_report" in result
     report = result["triage_report"]
-    
+
     # Check that failed_agents is populated correctly
     assert report.failed_agents == ["aci"]
-    
+
     # Verify the LLM was called with failure info in prompt
     call_args = mock_structured_llm.invoke.call_args[0][0]
     # Check that the user message contains failure info
     user_msg = call_args[1].content
     assert "aci" in user_msg
     assert "FAILURE" in user_msg or "Failed Agents" in user_msg
-

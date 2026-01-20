@@ -20,6 +20,9 @@ COPY static ./static
 COPY .env.example .
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 
+# Fix line endings (CRLF -> LF) for Windows compatibility
+RUN sed -i 's/\r$//' /usr/local/bin/entrypoint.sh
+
 # Make entrypoint executable
 RUN chmod +x /usr/local/bin/entrypoint.sh
 

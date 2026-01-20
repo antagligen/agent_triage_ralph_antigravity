@@ -39,25 +39,25 @@ def get_aci_agent_node(config: AppConfig):
     try:
         username, password = get_aci_credentials()
         apic_url = config.devices.aci.apic_url if config.devices and config.devices.aci else "N/A"
-        
+
         # Simulated Authentication
         print(f"--- ACI Agent Initializing ---")
         print(f"Target APIC: {apic_url}")
         print(f"Authenticated as: {username}")
-        
+
         tool_config = ACIToolConfig(
             base_url=apic_url,
             username=username,
             password=password,
             verify_ssl=False
         )
-        
+
     except Exception as e:
         print(f"Failed to initialize ACI Config: {e}")
 
     # Standard Tools
     tools = [aci_diag, ping, traceroute]
-    
+
     # Dynamic Tools
     try:
         # Assuming config/aci_endpoints.json is at the project root relative to execution or fixed path
@@ -74,22 +74,22 @@ def get_aci_agent_node(config: AppConfig):
                      print(f"Failed to create tool {ep_config.get('name')}: {e}")
         else:
              print(f"Dynamic tool config not found at {config_path}")
-            
+
     except Exception as e:
         print(f"Error loading dynamic tools: {e}")
 
     llm = get_llm(config.orchestrator_provider, config.orchestrator_model, temperature=0)
-    
+
     system_prompt = load_system_prompt("aci")
-    agent = create_react_agent(llm, tools=tools, state_modifier=system_prompt)
-    
+    agent = create_react_agent(llm, tools=tools, prompt=system_prompt)
+
     def aci_node(state) -> SubAgentResult:
         try:
             result = agent.invoke(state)
             # Extract the last message as the summary
             last_msg = result["messages"][-1]
             summary = last_msg.content if hasattr(last_msg, "content") else str(last_msg)
-            
+
             return SubAgentResult(
                 agent_name="aci",
                 raw_data={"messages": [m.content for m in result["messages"]]},

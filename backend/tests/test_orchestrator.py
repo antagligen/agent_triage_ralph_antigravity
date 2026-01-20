@@ -1,4 +1,5 @@
 import pytest
+from typing import Dict, Any
 from unittest.mock import MagicMock, patch
 from backend.src.orchestrator import get_orchestrator_node, AgentState
 from backend.src.config import AppConfig
@@ -24,7 +25,7 @@ def test_missing_ips_routes_to_infoblox(mock_config, mock_get_llm):
     """Test that missing IPs route to infoblox deterministically."""
     # Setup
     orchestrator = get_orchestrator_node(mock_config)
-    state = {
+    state: Dict[str, Any] = {
         "messages": [],
         "incident_data": {}, # Empty data
         "next_node": "",
@@ -44,11 +45,11 @@ def test_present_ips_routes_to_sub_agents(mock_config, mock_get_llm):
     # Setup Mocks
     mock_llm_instance = MagicMock()
     mock_get_llm.return_value = mock_llm_instance
-    
+
     # Mock the structured output
     mock_structured_llm = MagicMock()
     mock_llm_instance.with_structured_output.return_value = mock_structured_llm
-    
+
     expected_decision = OrchestratorDecision(
         next_steps=["sub_agents"],
         reasoning="Data looks good, checking firewalls."
@@ -57,7 +58,7 @@ def test_present_ips_routes_to_sub_agents(mock_config, mock_get_llm):
 
     # Setup State
     orchestrator = get_orchestrator_node(mock_config)
-    state = {
+    state: Dict[str, Any] = {
         "messages": [],
         "incident_data": {
             "source_ip": "192.168.1.1",
@@ -83,16 +84,16 @@ def test_llm_failure_fallback(mock_config, mock_get_llm):
     # Setup Mocks
     mock_llm_instance = MagicMock()
     mock_get_llm.return_value = mock_llm_instance
-    
+
     mock_structured_llm = MagicMock()
     mock_llm_instance.with_structured_output.return_value = mock_structured_llm
-    
+
     # Simulate Error
     mock_structured_llm.invoke.side_effect = Exception("API Error")
 
     # Setup State
     orchestrator = get_orchestrator_node(mock_config)
-    state = {
+    state: Dict[str, Any] = {
         "messages": [],
         "incident_data": {
             "source_ip": "1.1.1.1",

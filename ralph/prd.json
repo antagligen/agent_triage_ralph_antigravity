@@ -1,100 +1,61 @@
 {
-    "project": "Configurable System Prompts",
-    "branchName": "ralph/configurable-prompts",
-    "description": "Extract hardcoded system prompts from Python code into external .txt files in backend/system_prompts/.",
+    "project": "Bug Fixes and QA",
+    "branchName": "ralph/bug-fixes-and-qa",
+    "description": "Fix the create_react_agent TypeError immediately. Prevent regression by adding pre-commit hooks. Improve test coverage with validation tests.",
     "userStories": [
         {
             "id": "US-001",
-            "title": "Create Prompt File Structure",
-            "description": "As a developer, I want a dedicated folder for system prompts so that I can easily find and edit them.",
+            "title": "Fix create_react_agent TypeError",
+            "description": "As a user, I want the chat to work without 500 errors, so I can use the agent.",
             "acceptanceCriteria": [
-                "Create `backend/system_prompts/` directory",
-                "Create prompt files: orchestrator.txt, aci.txt, infoblox.txt, palo_alto.txt, triage.txt",
-                "Each file contains appropriate default prompt text",
+                "Investigate valid arguments for `create_react_agent` in the installed version",
+                "Update `backend/src/sub_agents/infoblox.py` (and others) to pass the system prompt correctly",
+                "Manual test: Verify chat runs without TypeError",
                 "Typecheck passes"
             ],
             "priority": 1,
             "passes": true,
-            "notes": "Created backend/system_prompts/ with orchestrator.txt, aci.txt, infoblox.txt, palo_alto.txt, triage.txt"
+            "notes": ""
         },
         {
             "id": "US-002",
-            "title": "Implement Prompt Loading Utility",
-            "description": "As a developer, I want a utility function to load prompts from files so that agents can use external configurations.",
+            "title": "Add Pre-commit Hooks",
+            "description": "As a developer, I want pytest and mypy to run before commit, so I don't break the build.",
             "acceptanceCriteria": [
-                "Add `load_system_prompt(agent_name: str) -> str` function to config.py",
-                "Function looks for `backend/system_prompts/{agent_name}.txt`",
-                "If file not found, logs warning and returns hardcoded default",
+                "Add `.pre-commit-config.yaml` with `pytest` and `mypy` hooks",
+                "Ensure `mypy` runs in strict mode or consistent with current usage",
+                "Verify `pre-commit run --all-files` passes (or fix existing issues)",
                 "Typecheck passes"
             ],
             "priority": 2,
             "passes": true,
-            "notes": "Added load_system_prompt() with Path-based resolution, DEFAULT_PROMPTS fallback dict, and logging"
+            "notes": ""
         },
         {
             "id": "US-003",
-            "title": "Update Orchestrator to Use Configurable Prompt",
-            "description": "As a developer, I want the orchestrator to load its prompt from config so that I can customize its behavior.",
+            "title": "Fix current pytest that is failing",
+            "description": "As a developer, I want tests functioning before continuing with other tasks",
             "acceptanceCriteria": [
-                "Orchestrator uses `load_system_prompt('orchestrator')`",
-                "Falls back to current behavior if file missing",
-                "Typecheck passes"
+                "pre-commit and pytest passes"
             ],
             "priority": 3,
             "passes": true,
-            "notes": "Updated orchestrator.py to use load_system_prompt('orchestrator') instead of config.system_prompt"
+            "notes": ""
         },
         {
             "id": "US-004",
-            "title": "Update Sub-Agents with Configurable Prompts",
-            "description": "As a developer, I want sub-agents (ACI, Infoblox, Palo Alto) to use configurable system prompts.",
+            "title": "Add Agent Integration Tests",
+            "description": "As a developer, I want to confirm that agents load and respond correctly, so I can catch issues like the `TypeError` earlier.",
             "acceptanceCriteria": [
-                "Each sub-agent uses `load_system_prompt()` for its prompt",
-                "Pass system prompt to `create_react_agent()` via `prompt` parameter",
-                "Falls back to default if file missing",
+                "Add integration tests in `backend/tests/test_agents.py`",
+                "Test instantiation of all agents (Orchestrator, ACI, Infoblox, Palo Alto, Triage)",
+                "Mock LLM calls to verify agent graph structure and prompt loading",
+                "All tests pass",
                 "Typecheck passes"
             ],
             "priority": 4,
             "passes": true,
-            "notes": "Updated aci.py, infoblox.py, palo_alto.py to use load_system_prompt() and create_react_agent(state_modifier=system_prompt)"
-        },
-        {
-            "id": "US-005",
-            "title": "Update Triage Agent with Configurable Prompt",
-            "description": "As a developer, I want the triage agent to use a configurable system prompt.",
-            "acceptanceCriteria": [
-                "Triage agent uses `load_system_prompt('triage')`",
-                "Falls back to current hardcoded prompt if file missing",
-                "Typecheck passes"
-            ],
-            "priority": 5,
-            "passes": true,
-            "notes": "Updated triage.py to use load_system_prompt('triage'). Verified with mypy."
-        },
-        {
-            "id": "US-006",
-            "title": "Add Unit Tests for Prompt Loading",
-            "description": "As a developer, I want tests to verify prompt loading behavior.",
-            "acceptanceCriteria": [
-                "Test loading existing prompt file returns content",
-                "Test loading missing file returns default and logs warning",
-                "All tests pass",
-                "Typecheck passes"
-            ],
-            "priority": 6,
-            "passes": true,
-            "notes": "Added backend/tests/test_config.py and verified tests pass."
-        },
-        {
-            "id": "US-007",
-            "title": "Update backend/readme on how to use this new feature.",
-            "description": "As a developer, I want know how to edit the system prompts.",
-            "acceptanceCriteria": [
-                "Readme updated with instructions on how to edit the system prompts."
-            ],
-            "priority": 7,
-            "passes": true,
-            "notes": "Updated backend/README.md with 'Configurable System Prompts' section detailing directory structure, editing, and fallback."
+            "notes": ""
         }
     ]
 }

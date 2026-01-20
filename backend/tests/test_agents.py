@@ -1,88 +1,173 @@
-import sys
-import os
+from typing import Any, Dict
+import pytest
 from unittest.mock import MagicMock, patch
 from langchain_core.messages import HumanMessage, AIMessage
 
-# Add backend to sys.path to resolve imports
+# Adjust sys.path to ensure we can import backend
+import sys
+import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '../..')))
 
 from backend.src.config import AppConfig
-from backend.src.models import SubAgentResult, AgentStatus
+from backend.src.models import SubAgentResult, AgentStatus, OrchestratorDecision, TriageReport
+from backend.src.sub_agents.aci import get_aci_agent_node
+from backend.src.sub_agents.infoblox import get_infoblox_agent_node
+from backend.src.sub_agents.palo_alto import get_palo_alto_agent_node
+from backend.src.orchestrator import get_orchestrator_node
+from backend.src.sub_agents.triage import get_triage_node
 
-# Mock Config
 class MockConfig(AppConfig):
     orchestrator_provider: str = "openai"
     orchestrator_model: str = "gpt-3.5-turbo"
     system_prompt: str = "You are a helpful assistant."
     sub_agents: list = []
 
-config = MockConfig()
+@pytest.fixture
+def mock_config():
+    return MockConfig()
 
-# Set dummy API key
-os.environ["OPENAI_API_KEY"] = "sk-dummy"
+@pytest.fixture
+def mock_llm():
+    mock = MagicMock()
+    # Mock structured output for Orchestrator and Triage
+    mock.with_structured_output.return_value = mock
+    return mock
 
-def mock_agent_invoke(state):
-    return {"messages": state["messages"] + [AIMessage(content="Mock summary result from agent.")]}
+# --- Tests for Sub-Agents (ACI, Infoblox, Palo Alto) ---
 
-def test_agents_mocked():
-    print("Running Mocked Agent Tests...")
-    
-    # We patch create_react_agent in each module to return a mock agent
-    # Since we can't easily patch the imported function in the test script (it's already imported in the modules),
-    # we might need to patch where it is USED.
-    # But since we import get_aci_agent_node, which imports create_react_agent...
-    # It's better to patch 'langgraph.prebuilt.create_react_agent' globally or in the target modules.
-    
-    with patch('backend.src.sub_agents.aci.create_react_agent') as mock_create_aci, \
-         patch('backend.src.sub_agents.infoblox.create_react_agent') as mock_create_infoblox, \
-         patch('backend.src.sub_agents.palo_alto.create_react_agent') as mock_create_palo:
-        
-        # Setup mocks
-        mock_agent = MagicMock()
-        mock_agent.invoke.side_effect = mock_agent_invoke
-        
-        mock_create_aci.return_value = mock_agent
-        mock_create_infoblox.return_value = mock_agent
-        mock_create_palo.return_value = mock_agent
+@patch('backend.src.sub_agents.aci.create_react_agent')
+@patch('backend.src.sub_agents.aci.load_system_prompt')
+@patch('backend.src.sub_agents.aci.get_llm')
+def test_aci_agent_initialization(mock_get_llm, mock_load_prompt, mock_create_agent, mock_config, mock_llm):
+    """Verify ACI agent loads prompt and passes it to create_react_agent."""
+    mock_load_prompt.return_value = "Mocked ACI Prompt"
+    mock_get_llm.return_value = mock_llm
 
-        # Import NODE getters here to ensure patches apply if they do lazy loading, 
-        # or if we need to reload. 
-        # Since they are specific functions, we just call them.
-        from backend.src.sub_agents.aci import get_aci_agent_node
-        from backend.src.sub_agents.infoblox import get_infoblox_agent_node
-        from backend.src.sub_agents.palo_alto import get_palo_alto_agent_node
+    # Run Factory
+    get_aci_agent_node(mock_config)
 
-        # Test ACI
-        print("Testing ACI Agent...")
-        node = get_aci_agent_node(config)
-        state = {"messages": [HumanMessage(content="Check diagnostics")]}
-        result = node(state)
-        print(f"Result: {result}")
-        assert isinstance(result, SubAgentResult)
-        assert result.status == AgentStatus.SUCCESS
-        
-        # Test Infoblox
-        print("\nTesting Infoblox Agent...")
-        node = get_infoblox_agent_node(config)
-        result = node(state)
-        print(f"Result: {result}")
-        assert isinstance(result, SubAgentResult)
-        assert result.status == AgentStatus.SUCCESS
+    # Assertion
+    mock_load_prompt.assert_called_with("aci")
+    mock_create_agent.assert_called_once()
+    _, kwargs = mock_create_agent.call_args
+    assert kwargs.get("prompt") == "Mocked ACI Prompt"
 
-        # Test Palo Alto
-        print("\nTesting Palo Alto Agent...")
-        node = get_palo_alto_agent_node(config)
-        result = node(state)
-        print(f"Result: {result}")
-        assert isinstance(result, SubAgentResult)
-        assert result.status == AgentStatus.SUCCESS
+@patch('backend.src.sub_agents.infoblox.create_react_agent')
+@patch('backend.src.sub_agents.infoblox.load_system_prompt')
+@patch('backend.src.sub_agents.infoblox.get_llm')
+def test_infoblox_agent_initialization(mock_get_llm, mock_load_prompt, mock_create_agent, mock_config, mock_llm):
+    """Verify Infoblox agent loads prompt and passes it to create_react_agent."""
+    mock_load_prompt.return_value = "Mocked Infoblox Prompt"
+    mock_get_llm.return_value = mock_llm
 
-if __name__ == "__main__":
-    try:
-        test_agents_mocked()
-        print("\nALL TESTS PASSED")
-    except Exception as e:
-        print(f"\nTEST FAILED: {e}")
-        import traceback
-        traceback.print_exc()
-        sys.exit(1)
+    get_infoblox_agent_node(mock_config)
+
+    mock_load_prompt.assert_called_with("infoblox")
+    mock_create_agent.assert_called_once()
+    _, kwargs = mock_create_agent.call_args
+    assert kwargs.get("prompt") == "Mocked Infoblox Prompt"
+
+@patch('backend.src.sub_agents.palo_alto.create_react_agent')
+@patch('backend.src.sub_agents.palo_alto.load_system_prompt')
+@patch('backend.src.sub_agents.palo_alto.get_llm')
+def test_palo_alto_agent_initialization(mock_get_llm, mock_load_prompt, mock_create_agent, mock_config, mock_llm):
+    """Verify Palo Alto agent loads prompt and passes it to create_react_agent."""
+    mock_load_prompt.return_value = "Mocked Palo Alto Prompt"
+    mock_get_llm.return_value = mock_llm
+
+    get_palo_alto_agent_node(mock_config)
+
+    mock_load_prompt.assert_called_with("palo_alto")
+    mock_create_agent.assert_called_once()
+    _, kwargs = mock_create_agent.call_args
+    assert kwargs.get("prompt") == "Mocked Palo Alto Prompt"
+
+# --- Tests for Orchestrator ---
+
+@patch('backend.src.orchestrator.load_system_prompt')
+@patch('backend.src.orchestrator.get_llm')
+def test_orchestrator_initialization_and_run(mock_get_llm, mock_load_prompt, mock_config, mock_llm):
+    """Verify Orchestrator loads prompt dynamically during execution."""
+    mock_load_prompt.return_value = "Mocked Orchestrator Prompt"
+    mock_get_llm.return_value = mock_llm
+
+    # Mock the LLM invoke response
+    mock_decision = OrchestratorDecision(next_steps=["aci"], reasoning="test")
+    mock_llm.invoke.return_value = mock_decision
+
+    # Create Node
+    node = get_orchestrator_node(mock_config)
+
+    # Run Node
+    state = {"messages": [HumanMessage(content="Test query")], "incident_data": {"source_ip": "1.1.1.1", "destination_ip": "2.2.2.2"}}
+    result = node(state)
+
+    # Assertions
+    mock_load_prompt.assert_called_with("orchestrator")
+    assert result["decision"] == mock_decision
+
+# --- Tests for Triage ---
+
+@patch('backend.src.sub_agents.triage.load_system_prompt')
+@patch('backend.src.sub_agents.triage.get_llm')
+def test_triage_initialization_and_run(mock_get_llm, mock_load_prompt, mock_config, mock_llm):
+    """Verify Triage loads prompt dynamically during execution."""
+    mock_load_prompt.return_value = "Mocked Triage Prompt"
+    mock_get_llm.return_value = mock_llm
+
+    # Mock Triage Report
+    mock_report = TriageReport(
+        root_cause="Test Cause",
+        details="Test Details",
+        action="Test Action",
+        failed_agents=[]
+    )
+    mock_llm.invoke.return_value = mock_report
+
+    # Create Node
+    node = get_triage_node(mock_config)
+
+    # Run Node
+    state = {
+        "sub_agent_results": [
+            SubAgentResult(agent_name="aci", status=AgentStatus.SUCCESS, summary="Good", raw_data={})
+        ],
+        "incident_data": {}
+    }
+    result = node(state)
+
+    # Assertions
+    mock_load_prompt.assert_called_with("triage")
+    assert result["triage_report"] == mock_report
+
+# --- Test Agent Execution Wrapper (verifying behavior) ---
+
+@patch('backend.src.sub_agents.aci.create_react_agent')
+@patch('backend.src.sub_agents.aci.get_llm')
+@patch('backend.src.sub_agents.aci.load_system_prompt')
+def test_agent_execution_wrapper(mock_load, mock_get_llm, mock_create_agent, mock_config, mock_llm):
+    """Verify the wrapper correctly formats the SubAgentResult."""
+    # Setup Mock Agent
+    mock_agent_instance = MagicMock()
+    # Invoke returns a dict with 'messages'
+    mock_agent_instance.invoke.return_value = {
+        "messages": [
+            HumanMessage(content="task"),
+            AIMessage(content="Final Answer")
+        ]
+    }
+    mock_create_agent.return_value = mock_agent_instance
+    mock_get_llm.return_value = mock_llm
+
+    # Get Node
+    node = get_aci_agent_node(mock_config)
+
+    # Execute
+    state = {"messages": [HumanMessage(content="Go")]}
+    result = node(state)
+
+    # Verify Result
+    assert isinstance(result, SubAgentResult)
+    assert result.agent_name == "aci"
+    assert result.status == AgentStatus.SUCCESS
+    assert result.summary == "Final Answer"
