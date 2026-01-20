@@ -10,17 +10,17 @@ echo "Checking directory: $SECRETS_DIR"
 if [ -d "$SECRETS_DIR" ]; then
     echo "Directory found. Listing files..."
     ls -la "$SECRETS_DIR"
-    
+
     for file in "$SECRETS_DIR"/*; do
         if [ -f "$file" ]; then
             filename=$(basename "$file")
-            
+
             # Convert to UPPERCASE
             key=$(echo "$filename" | tr '[:lower:]' '[:upper:]')
-            
+
             # Read value
             val=$(cat "$file")
-            
+
             echo "Exporting secret: $key"
             export "$key"="$val"
         else

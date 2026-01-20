@@ -39,7 +39,7 @@ Make all system prompts for sub-agents and orchestrator configurable via externa
 **Description:** As a developer, I want the orchestrator to load its prompt from config so that I can customize its behavior.
 
 **Acceptance Criteria:**
-- [ ] Orchestrator uses `load_system_prompt("orchestrator")` 
+- [ ] Orchestrator uses `load_system_prompt("orchestrator")`
 - [ ] Falls back to current behavior if file missing
 - [ ] Typecheck passes
 

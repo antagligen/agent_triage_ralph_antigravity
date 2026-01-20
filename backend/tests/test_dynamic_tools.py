@@ -21,7 +21,7 @@ def sample_config_file():
     with tempfile.NamedTemporaryFile(mode='w', delete=False, suffix='.json') as f:
         json.dump(data, f)
         path = f.name
-    
+
     yield path
     os.remove(path)
 
@@ -39,7 +39,7 @@ def test_create_dynamic_model():
     assert issubclass(Model, BaseModel)
     schema = Model.model_json_schema()
     props = schema["properties"]
-    
+
     assert "tenant_name" in props
     assert props["tenant_name"]["type"] == "string"
     assert "count" in props
@@ -55,12 +55,12 @@ def test_create_dynamic_tool():
             {"name": "type", "type": "str", "description": "Data type"}
         ]
     }
-    
+
     tool = create_dynamic_tool(config)
     assert tool.name == "fetch_data"
     assert tool.description == "Fetches data"
     assert "type" in tool.args
-    
+
     # Test execution
     result = tool.invoke({"type": "metrics"})
     assert "Executed GET on /api/data/metrics" in result

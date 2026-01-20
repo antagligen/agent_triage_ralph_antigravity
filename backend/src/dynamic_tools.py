@@ -29,7 +29,7 @@ def create_dynamic_model(tool_name: str, params: List[Dict]) -> Type[BaseModel]:
         p_name = param["name"]
         p_type_str = param.get("type", "str")
         p_desc = param.get("description", "")
-        
+
         # Map string types to actual Python types
         # Basic support for now, can be expanded
         p_type: Type[Any] = str
@@ -39,9 +39,9 @@ def create_dynamic_model(tool_name: str, params: List[Dict]) -> Type[BaseModel]:
             p_type = bool
         elif p_type_str == "float":
             p_type = float
-            
+
         fields[p_name] = (p_type, Field(description=p_desc))
-    
+
     # Create the model dynamically
     model_name = f"{tool_name.replace('_', ' ').title().replace(' ', '')}Args"
     return create_model(model_name, **fields) # type: ignore
@@ -54,12 +54,12 @@ def generic_aci_runner(path: str, method: str, tool_config: Optional[ACIToolConf
     formatted_path = path
     for k, v in kwargs.items():
         formatted_path = formatted_path.replace(f"{{{k}}}", str(v))
-        
+
     if not tool_config:
         return f"Executed {method} on {formatted_path}. [SIMULATION] Success. (No config provided)"
 
     url = f"{tool_config.base_url.rstrip('/')}{formatted_path}"
-    
+
     try:
         # In a real environment, you'd likely handle auth tokens better (e.g. login first)
         # For this POC, we'll assume Basic Auth or just log the attempt if credentials aren't full.
@@ -81,7 +81,7 @@ def generic_aci_runner(path: str, method: str, tool_config: Optional[ACIToolConf
             verify=tool_config.verify_ssl,
             timeout=10
         )
-        
+
         # Return truncated response/status
         if response.status_code < 300:
             try:
@@ -104,15 +104,15 @@ def create_dynamic_tool(config: Dict, tool_config: Optional[ACIToolConfig] = Non
     path = config["path"]
     method = config["method"]
     params = config.get("parameters", [])
-    
+
     # 1. Create the args schema
     args_schema = create_dynamic_model(name, params)
-    
+
     # 2. Define the executable function
     # We need to bind the fixed path/method to the function so the agent just calls it with args
     def tool_func(**kwargs) -> str:
         return generic_aci_runner(path, method, tool_config=tool_config, **kwargs)
-        
+
     # 3. Return the tool
     return StructuredTool.from_function(
         func=tool_func,

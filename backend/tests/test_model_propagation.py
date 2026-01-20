@@ -19,22 +19,22 @@ def test_model_propagation_to_sub_agents(mock_config):
     """
     Verify that the orchestrator and sub-agents both receive the correct model configuration.
     """
-    
+
     # We need to patch get_llm in both locations where it is used
     with patch("backend.src.orchestrator.get_llm") as mock_get_llm_orch, \
          patch("backend.src.sub_agents.aci.get_llm") as mock_get_llm_aci:
-        
+
         # Setup mocks to return a dummy object so code doesn't crash on invoke/bind
         mock_llm_instance = MagicMock()
         mock_get_llm_orch.return_value = mock_llm_instance
         mock_get_llm_aci.return_value = mock_llm_instance
-        
+
         # Build the graph
         build_graph(mock_config)
-        
+
         # Verify Orchestrator used the config
         mock_get_llm_orch.assert_called_with("gemini", "gemini-pro-mock", temperature=0)
-        
+
         # Verify ACI Sub-agent used the config
         mock_get_llm_aci.assert_called_with("gemini", "gemini-pro-mock", temperature=0)
 
@@ -44,18 +44,18 @@ def test_model_propagation_override(mock_config):
     """
     # Override
     override_config = mock_config.model_copy(update={
-        "orchestrator_provider": "openai", 
+        "orchestrator_provider": "openai",
         "orchestrator_model": "gpt-4-mock"
     })
-    
+
     with patch("backend.src.orchestrator.get_llm") as mock_get_llm_orch, \
          patch("backend.src.sub_agents.aci.get_llm") as mock_get_llm_aci:
-             
+
         mock_llm_instance = MagicMock()
         mock_get_llm_orch.return_value = mock_llm_instance
         mock_get_llm_aci.return_value = mock_llm_instance
-        
+
         build_graph(override_config)
-        
+
         mock_get_llm_orch.assert_called_with("openai", "gpt-4-mock", temperature=0)
         mock_get_llm_aci.assert_called_with("openai", "gpt-4-mock", temperature=0)

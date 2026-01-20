@@ -28,7 +28,7 @@ def get_triage_node(config: AppConfig):
                 failed_results.append(res)
             else:
                 successful_results.append(res)
-        
+
         # Build list of failed agent names
         failed_agent_names = [res.agent_name for res in failed_results]
 
@@ -36,16 +36,16 @@ def get_triage_node(config: AppConfig):
         success_summaries = []
         for res in successful_results:
             success_summaries.append(f"Agent: {res.agent_name}\nStatus: {res.status}\nSummary: {res.summary}")
-        
+
         failure_summaries = []
         for res in failed_results:
             failure_summaries.append(f"Agent: {res.agent_name}\nStatus: {res.status}\nError: {res.summary}")
-        
+
         success_text = "\n---\n".join(success_summaries) if success_summaries else "No successful results."
         failure_text = "\n---\n".join(failure_summaries) if failure_summaries else "None."
-        
+
         system_prompt = load_system_prompt("triage")
-        
+
         user_content = (
             f"Incident Data: {incident_data}\n\n"
             f"Successful Agent Reports:\n{success_text}\n\n"
@@ -62,11 +62,11 @@ def get_triage_node(config: AppConfig):
                  # Fallback/Error handling if the structured output fails to parse into the object directly
                  # In runtime with real LLM this should work if with_structured_output is correct
                  pass
-            
+
             # Ensure failed_agents is populated even if LLM didn't return it
             if isinstance(report, TriageReport):
                 report.failed_agents = failed_agent_names
-                 
+
         except Exception as e:
             report = TriageReport(
                 root_cause="Analysis Failed",

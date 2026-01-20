@@ -20,9 +20,9 @@ def create_test_config():
     }
     with open(TEST_CONFIG_PATH, 'w') as f:
         yaml.dump(config_data, f)
-    
+
     yield
-    
+
     # Cleanup
     if os.path.exists(TEST_CONFIG_PATH):
         os.remove(TEST_CONFIG_PATH)
@@ -42,10 +42,10 @@ def test_load_invalid_format():
     # Create a txt file
     with open("test.txt", 'w') as f:
         f.write("test")
-        
+
     with pytest.raises(ValueError):
         load_config("test.txt")
-        
+
 
     os.remove("test.txt")
 
@@ -59,7 +59,7 @@ def test_load_gemini_config():
     }
     with open(gemini_config_path, 'w') as f:
         yaml.dump(config_data, f)
-    
+
     try:
         config = load_config(gemini_config_path)
         assert config.orchestrator_model == "gemini-pro"

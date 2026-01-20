@@ -26,27 +26,27 @@ def mock_agent_invoke(state):
 
 def test_agents_mocked():
     print("Running Mocked Agent Tests...")
-    
+
     # We patch create_react_agent in each module to return a mock agent
     # Since we can't easily patch the imported function in the test script (it's already imported in the modules),
     # we might need to patch where it is USED.
     # But since we import get_aci_agent_node, which imports create_react_agent...
     # It's better to patch 'langgraph.prebuilt.create_react_agent' globally or in the target modules.
-    
+
     with patch('backend.src.sub_agents.aci.create_react_agent') as mock_create_aci, \
          patch('backend.src.sub_agents.infoblox.create_react_agent') as mock_create_infoblox, \
          patch('backend.src.sub_agents.palo_alto.create_react_agent') as mock_create_palo:
-        
+
         # Setup mocks
         mock_agent = MagicMock()
         mock_agent.invoke.side_effect = mock_agent_invoke
-        
+
         mock_create_aci.return_value = mock_agent
         mock_create_infoblox.return_value = mock_agent
         mock_create_palo.return_value = mock_agent
 
-        # Import NODE getters here to ensure patches apply if they do lazy loading, 
-        # or if we need to reload. 
+        # Import NODE getters here to ensure patches apply if they do lazy loading,
+        # or if we need to reload.
         # Since they are specific functions, we just call them.
         from backend.src.sub_agents.aci import get_aci_agent_node
         from backend.src.sub_agents.infoblox import get_infoblox_agent_node
@@ -60,7 +60,7 @@ def test_agents_mocked():
         print(f"Result: {result}")
         assert isinstance(result, SubAgentResult)
         assert result.status == AgentStatus.SUCCESS
-        
+
         # Test Infoblox
         print("\nTesting Infoblox Agent...")
         node = get_infoblox_agent_node(config)

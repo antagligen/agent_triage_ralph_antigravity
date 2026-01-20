@@ -24,16 +24,16 @@ def get_palo_alto_agent_node(config: AppConfig):
     tools = [check_firewall_logs, verify_policy]
 
     llm = get_llm(config.orchestrator_provider, config.orchestrator_model, temperature=0)
-    
+
     system_prompt = load_system_prompt("palo_alto")
-    agent = create_react_agent(llm, tools=tools, state_modifier=system_prompt)
-    
+    agent = create_react_agent(llm, tools=tools, prompt=system_prompt)
+
     def palo_node(state) -> SubAgentResult:
         try:
             result = agent.invoke(state)
             last_msg = result["messages"][-1]
             summary = last_msg.content if hasattr(last_msg, "content") else str(last_msg)
-            
+
             return SubAgentResult(
                 agent_name="palo_alto",
                 raw_data={"messages": [m.content for m in result["messages"]]},
