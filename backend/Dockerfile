@@ -18,7 +18,12 @@ COPY config.yaml .
 # Copy static files if they are still served by backend for now (though plan says separate microservices, backend code references it)
 COPY static ./static
 COPY .env.example .
+COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 
+# Make entrypoint executable
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 # Expose port
 EXPOSE 8000
 

@@ -1,49 +1,96 @@
 {
-    "project": "Frontend Connection Fix",
-    "branchName": "ralph/fix-frontend-connection",
-    "description": "Fix frontend-backend connection in Docker environment by standardizing URL configuration.",
+    "project": "AIOps Backend Refactor",
+    "branchName": "ralph/langraph-refactor",
+    "description": "Refactor backend to use LangGraph with Supervisor-Worker pattern for parallel execution and strict state management.",
     "userStories": [
         {
             "id": "US-001",
-            "title": "Standardize Backend URL Configuration",
-            "description": "As a developer, I want the frontend to consistently use the BACKEND_URL environment variable so that it can point to http://backend:8000 inside Docker and http://localhost:8000 locally.",
+            "title": "Define Shared Pydantic Schemas",
+            "description": "As a developer, I need strict data contracts so that agents communicate reliably.",
             "acceptanceCriteria": [
-                "Frontend app.py reads BACKEND_URL (defaults to http://localhost:8000 if missing)",
-                "Docker Compose frontend service has BACKEND_URL set to the backend service alias (e.g. http://backend:8000)",
-                "Frontend logs the configured backend URL on startup (for debugging)",
+                "Create/Update `backend/src/models.py`",
+                "Define `SubAgentResult` with fields: `raw_data` (dict), `summary` (str), `status` (enum)",
+                "Define `OrchestratorDecision` with fields: `next_steps` (list), `reasoning` (str)",
+                "Define `TriageReport` with fields: `root_cause` (str), `details` (list/str), `action` (str)",
                 "Typecheck passes"
             ],
             "priority": 1,
-            "passes": true,
+            "passes": false,
             "notes": ""
         },
         {
             "id": "US-002",
-            "title": "Verify Docker Networking",
-            "description": "As a user, I want to be able to chat via the frontend in Docker without connection errors.",
+            "title": "Refactor Sub-Agents to Schema",
+            "description": "As a developer, I need existing agents to return the new `SubAgentResult` format so they fit into the graph.",
             "acceptanceCriteria": [
-                "docker-compose up starts both services without error",
-                "Sending a message in the frontend results in a streaming response from the backend",
-                "No 'Connection refused' or 'Name resolution' errors in frontend logs",
-                "Typecheck passes",
-                "Verify in browser using dev-browser skill"
+                "Refactor Infoblox agent to return `SubAgentResult`",
+                "Refactor Palo Alto agent to return `SubAgentResult`",
+                "Refactor Cisco agent (if present) to return `SubAgentResult`",
+                "Ensure all agents handle API errors as soft failures (Status: FAILURE)",
+                "Typecheck passes"
             ],
             "priority": 2,
-            "passes": true,
+            "passes": false,
             "notes": ""
         },
         {
             "id": "US-003",
-            "title": "Verify Docker Networking",
-            "description": "As a devops engineer I want to be able to validate connection to backend /health",
+            "title": "Implement Orchestrator Validation & Planning",
+            "description": "As a system, I need an Orchestrator to validate inputs and route tasks.",
             "acceptanceCriteria": [
-                "remove current mocked setup for /chat",
-                "add a status text with a green/red dot in the frontend to show the connection status by doing requests to /health",
-                "add a refresh button to manually refresh the connection status",
-                "Verify in browser using dev-browser skill"
+                "Create `Orchestrator` node using `ChatOpenAI`",
+                "Implement input validation (check for IP fields)",
+                "Route to Infoblox if data missing, or Sub-Agents if present",
+                "Output structured `OrchestratorDecision`",
+                "Typecheck passes"
             ],
             "priority": 3,
-            "passes": true,
+            "passes": false,
+            "notes": ""
+        },
+        {
+            "id": "US-004",
+            "title": "Implement Parallel Agent Execution Graph",
+            "description": "As a user, I want agents to run in parallel to reduce data fetching time.",
+            "acceptanceCriteria": [
+                "Setup LangGraph StateGraph with `AgentState`",
+                "Implement conditional edges from Orchestrator",
+                "Implement parallel node execution (fan-out) for Sub-Agents",
+                "Implement fan-in to collect results",
+                "Typecheck passes"
+            ],
+            "priority": 4,
+            "passes": false,
+            "notes": ""
+        },
+        {
+            "id": "US-005",
+            "title": "Implement Triage Agent",
+            "description": "As a user, I want a final diagnosis report based on collected data.",
+            "acceptanceCriteria": [
+                "Create `Triage` node that runs after Sub-Agents",
+                "Feed only summaries to the LLM (hide raw data)",
+                "Generate `TriageReport` with confidence score",
+                "Handle partial failures gracefully",
+                "Typecheck passes"
+            ],
+            "priority": 5,
+            "passes": false,
+            "notes": ""
+        },
+        {
+            "id": "US-006",
+            "title": "State Persistence and API Integration",
+            "description": "As an SRE, I want results persisted and accessible via API.",
+            "acceptanceCriteria": [
+                "Update FastAPI endpoint to run the LangGraph graph",
+                "Persist full `IncidentState` (including raw data) to database/storage",
+                "Return `TriageReport` in the API response",
+                "Typecheck passes",
+                "Verify in browser using dev-browser skill (via frontend)"
+            ],
+            "priority": 6,
+            "passes": false,
             "notes": ""
         }
     ]

@@ -1,0 +1,50 @@
+{
+    "project": "Frontend Connection Fix",
+    "branchName": "ralph/fix-frontend-connection",
+    "description": "Fix frontend-backend connection in Docker environment by standardizing URL configuration.",
+    "userStories": [
+        {
+            "id": "US-001",
+            "title": "Standardize Backend URL Configuration",
+            "description": "As a developer, I want the frontend to consistently use the BACKEND_URL environment variable so that it can point to http://backend:8000 inside Docker and http://localhost:8000 locally.",
+            "acceptanceCriteria": [
+                "Frontend app.py reads BACKEND_URL (defaults to http://localhost:8000 if missing)",
+                "Docker Compose frontend service has BACKEND_URL set to the backend service alias (e.g. http://backend:8000)",
+                "Frontend logs the configured backend URL on startup (for debugging)",
+                "Typecheck passes"
+            ],
+            "priority": 1,
+            "passes": true,
+            "notes": ""
+        },
+        {
+            "id": "US-002",
+            "title": "Verify Docker Networking",
+            "description": "As a user, I want to be able to chat via the frontend in Docker without connection errors.",
+            "acceptanceCriteria": [
+                "docker-compose up starts both services without error",
+                "Sending a message in the frontend results in a streaming response from the backend",
+                "No 'Connection refused' or 'Name resolution' errors in frontend logs",
+                "Typecheck passes",
+                "Verify in browser using dev-browser skill"
+            ],
+            "priority": 2,
+            "passes": true,
+            "notes": ""
+        },
+        {
+            "id": "US-003",
+            "title": "Verify Docker Networking",
+            "description": "As a devops engineer I want to be able to validate connection to backend /health",
+            "acceptanceCriteria": [
+                "remove current mocked setup for /chat",
+                "add a status text with a green/red dot in the frontend to show the connection status by doing requests to /health",
+                "add a refresh button to manually refresh the connection status",
+                "Verify in browser using dev-browser skill"
+            ],
+            "priority": 3,
+            "passes": true,
+            "notes": ""
+        }
+    ]
+}
