@@ -27,7 +27,7 @@
                 "Typecheck passes"
             ],
             "priority": 2,
-            "passes": false,
+            "passes": true,
             "notes": ""
         },
         {
@@ -42,7 +42,7 @@
                 "Verify in browser using dev-browser skill"
             ],
             "priority": 3,
-            "passes": false,
+            "passes": true,
             "notes": ""
         },
         {

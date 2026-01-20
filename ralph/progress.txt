@@ -1,2 +1,31 @@
 # Ralph Progress Log
 ---
+
+## 2026-01-20 - US-001
+- Implemented `config/devices.yaml` for non-sensitive config.
+- Implemented Docker Secrets for `ACI_USERNAME` and `ACI_PASSWORD`.
+- Created `backend/src/config.py` loader.
+- Updated ACI agent to use config.
+- **Learnings:**
+  - `docker-compose` secrets injection requires careful YAML structuring (avoid duplicate keys).
+  - `entrypoint.sh` works well for converting file secrets to env vars.
+---
+
+## 2026-01-20 - US-002
+- Implemented `config/aci_endpoints.json` for definition of tools.
+- Implemented `backend/src/dynamic_tools.py` using Pydantic `create_model`.
+- Updated ACI Agent to load dynamic tools on startup.
+- **Learnings:**
+  - `pydantic.create_model` is powerful but requires careful type annotation for mypy.
+  - `StructuredTool.from_function` allows binding args (like `path` and `method`) to a generic runner function easily.
+---
+
+## 2026-01-20 - US-003
+- Upgraded `generic_aci_runner` in `dynamic_tools.py` to support real HTTP requests via `requests`.
+- Implemented `ACIToolConfig` to pass auth/config to the tool runner.
+- Added connection error handling and status code checks.
+- Verified with `test_agent_execution.py` (Mocked) and `mypy` (with stubs ignored for requests).
+- **Learnings:**
+  - Mocking `requests.request` is essential for testing Logic w/o real backend.
+  - Need to be careful with optional configs in generic runners to avoid NPEs.
+---

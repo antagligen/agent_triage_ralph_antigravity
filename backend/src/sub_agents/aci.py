@@ -10,7 +10,11 @@ from ..models import SubAgentResult, AgentStatus
 
 
 
-# Mocked Tools
+from ..dynamic_tools import load_endpoints_config, create_dynamic_tool, ACIToolConfig
+import os
+
+# ... imports ...
+
 @tool
 def aci_diag(target: str) -> str:
     """Run diagnostics on a Cisco ACI target (simulated)."""
@@ -32,6 +36,7 @@ def get_aci_agent_node(config: AppConfig):
     Creates the Cisco ACI sub-agent node.
     """
     # Load Credentials & Config
+    tool_config = None
     try:
         username, password = get_aci_credentials()
         apic_url = config.devices.aci.apic_url if config.devices and config.devices.aci else "N/A"
@@ -40,12 +45,39 @@ def get_aci_agent_node(config: AppConfig):
         print(f"--- ACI Agent Initializing ---")
         print(f"Target APIC: {apic_url}")
         print(f"Authenticated as: {username}")
-        # In a real app, we would get a token here.
+        
+        tool_config = ACIToolConfig(
+            base_url=apic_url,
+            username=username,
+            password=password,
+            verify_ssl=False
+        )
         
     except Exception as e:
         print(f"Failed to initialize ACI Config: {e}")
 
+    # Standard Tools
     tools = [aci_diag, ping, traceroute]
+    
+    # Dynamic Tools
+    try:
+        # Assuming config/aci_endpoints.json is at the project root relative to execution or fixed path
+        # Adjust path resolution as needed. Here we assume the app runs from project root.
+        config_path = "config/aci_endpoints.json"
+        if os.path.exists(config_path):
+            endpoint_configs = load_endpoints_config(config_path)
+            for ep_config in endpoint_configs:
+                try:
+                    dynamic_tool = create_dynamic_tool(ep_config, tool_config=tool_config)
+                    tools.append(dynamic_tool)
+                    print(f"Loaded dynamic tool: {ep_config['name']}")
+                except Exception as e:
+                     print(f"Failed to create tool {ep_config.get('name')}: {e}")
+        else:
+             print(f"Dynamic tool config not found at {config_path}")
+            
+    except Exception as e:
+        print(f"Error loading dynamic tools: {e}")
 
     llm = get_llm(config.orchestrator_provider, config.orchestrator_model, temperature=0)
     
