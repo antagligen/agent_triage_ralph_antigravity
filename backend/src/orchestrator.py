@@ -4,7 +4,7 @@ Orchestrator Module
 This module defines the main LangGraph orchestrator that routes user queries
 to appropriate sub-agents or handles them directly.
 """
-from typing import TypedDict, Annotated, Sequence, Literal, List, Dict, Any, cast
+from typing import TypedDict, Annotated, Sequence, Literal, List, Dict, Any, cast, Optional
 import operator
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.graph import StateGraph, END
@@ -12,10 +12,11 @@ from langchain_openai import ChatOpenAI
 
 from .config import AppConfig
 from .llm_factory import get_llm
-from .models import OrchestratorDecision, SubAgentResult
+from .models import OrchestratorDecision, SubAgentResult, TriageReport
 from .sub_agents.infoblox import get_infoblox_agent_node
 from .sub_agents.palo_alto import get_palo_alto_agent_node
 from .sub_agents.aci import get_aci_agent_node
+from .sub_agents.triage import get_triage_node
 
 def merge_sub_agent_results(left: List[SubAgentResult], right: List[SubAgentResult]) -> List[SubAgentResult]:
     """Reducer to merge sub-agent results."""
@@ -28,6 +29,7 @@ class AgentState(TypedDict):
     incident_data: Dict[str, Any]  # Shared state for incident data
     decision: OrchestratorDecision
     sub_agent_results: Annotated[List[SubAgentResult], merge_sub_agent_results]
+    triage_report: Optional[TriageReport]
 
 def get_orchestrator_node(config: AppConfig):
     """
@@ -105,6 +107,9 @@ def build_graph(config: AppConfig):
     workflow.add_node("aci", aci_node)
     workflow.add_node("palo_alto", palo_alto_node)
     
+    triage = get_triage_node(config)
+    workflow.add_node("triage", triage)
+    
     workflow.set_entry_point("orchestrator")
     
     # 2. Routing Logic
@@ -147,9 +152,10 @@ def build_graph(config: AppConfig):
     # After sub-agents run, where do they go? 
     # For now, back to END. In US-005 (Triage), we will route them to 'triage'.
     
-    workflow.add_edge("infoblox", END)
-    workflow.add_edge("aci", END)
-    workflow.add_edge("palo_alto", END)
+    workflow.add_edge("infoblox", "triage")
+    workflow.add_edge("aci", "triage")
+    workflow.add_edge("palo_alto", "triage")
+    workflow.add_edge("triage", END)
 
     return workflow.compile()
 
