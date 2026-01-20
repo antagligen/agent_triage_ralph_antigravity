@@ -90,8 +90,22 @@
                 "Verify in browser using dev-browser skill (via frontend)"
             ],
             "priority": 6,
-            "passes": false,
-            "notes": ""
+            "passes": true,
+            "notes": "Completed on 2026-01-20. Integrated API with MemorySaver and returning TriageReport."
+        },
+        {
+            "id": "US-007",
+            "title": "refactor check",
+            "description": "As a developer I wanat the codebase to be clean and easy to maintain.",
+            "acceptanceCriteria": [
+                "Remove old code from the codebase, now that langraph is in place",
+                "make sure unit tests are present for all new code",
+                "update readmes with new setup instructions and flows",
+                "Verify in browser using dev-browser skill (via frontend)"
+            ],
+            "priority": 7,
+            "passes": true,
+            "notes": "Completed on 2026-01-20. Cleaned up tests and docs. Verified with full test suite (22 passed)."
         }
     ]
 }

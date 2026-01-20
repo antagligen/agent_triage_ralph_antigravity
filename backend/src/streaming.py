@@ -37,6 +37,23 @@ async def stream_graph_events(workflow: Any, inputs: Dict[str, Any], run_config:
                     elif node_name == "network_specialist":
                          yield f"event: thought\ndata: {data}\n\n"
             
+            # Handle Decision (Reasoning)
+            if "decision" in state_update:
+                decision = state_update["decision"]
+                reasoning = None
+                if isinstance(decision, dict):
+                    reasoning = decision.get("reasoning")
+                else:
+                    reasoning = getattr(decision, "reasoning", None)
+                    
+                if reasoning:
+                    data = json.dumps({
+                        "node": node_name,
+                        "content": reasoning,
+                        "type": "ai"
+                    })
+                    yield f"event: thought\ndata: {data}\n\n"
+                    
             # Handle Triage Report
             if "triage_report" in state_update and state_update["triage_report"]:
                 report = state_update["triage_report"]

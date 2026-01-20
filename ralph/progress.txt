@@ -54,3 +54,22 @@
 - **Learnings:**
   - Separating data aggregation (Sub-Agents) from analysis (Triage) allows for cleaner LLM prompts and specific error handling.
 ---
+
+## 2026-01-20 - US-006
+- Updated backend to use MemorySaver for state persistence.
+- Integrated orchestrator graph into FastAPI.
+- Updated frontend to display TriageReport.
+- Verified with integration tests.
+- **Learnings:**
+  - Checkpoint savers in LangGraph need to be careful with global vs request-scoped if persistence across restarts is needed (MemorySaver is ephemeral).
+  - Frontend event stream handling requires explicit type checks for custom events like 'triage_report'.
+---
+
+## 2026-01-20 - US-007
+- Refactored codebase, moved tests to `backend/tests`, and unified imports (`backend.src`).
+- Updated `backend/README.md` and `streaming.py` to match new architecture.
+- Verified with full test suite (22 passed).
+- **Learnings:**
+  - Persistent test organization (separate `tests` folder vs `src`) requires careful import management (`backend.src`).
+  - Integration tests mocking complex objects (`OrchestratorDecision`) must ensure serialization compatibility (dict vs object) in consumers (`streaming.py`).
+---

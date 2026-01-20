@@ -1,7 +1,7 @@
 import pytest
 import os
 import yaml
-from src.config import load_config, AppConfig
+from backend.src.config import load_config, AppConfig
 
 TEST_CONFIG_PATH = "test_config.yaml"
 

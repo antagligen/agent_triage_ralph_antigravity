@@ -71,7 +71,9 @@ def test_present_ips_routes_to_sub_agents(mock_config, mock_get_llm):
     result = orchestrator(state)
 
     # Verify
-    assert result["next_node"] == "sub_agents"
+    # Verify
+    # assert result["next_node"] == "sub_agents" # Node no longer returns next_node, router handles it
+    assert result["decision"] == expected_decision
     assert result["decision"] == expected_decision
     # Ensure LLM was called (via with_structured_output)
     mock_structured_llm.invoke.assert_called_once()
@@ -104,5 +106,7 @@ def test_llm_failure_fallback(mock_config, mock_get_llm):
     result = orchestrator(state)
 
     # Verify
-    assert result["next_node"] == "sub_agents"
+    # Verify
+    assert "triage" not in result # Should not be triage handling validation
     assert "LLM parsing failed" in result["decision"].reasoning
+    assert result["decision"].next_steps == ["aci", "palo_alto"]
