@@ -33,6 +33,17 @@
         },
         {
             "id": "US-003",
+            "title": "Fix current pytest that is failing",
+            "description": "As a developer, I want tests functioning before continuing with other tasks",
+            "acceptanceCriteria": [
+                "pre-commit and pytest passes"
+            ],
+            "priority": 3,
+            "passes": true,
+            "notes": ""
+        },
+        {
+            "id": "US-004",
             "title": "Add Agent Integration Tests",
             "description": "As a developer, I want to confirm that agents load and respond correctly, so I can catch issues like the `TypeError` earlier.",
             "acceptanceCriteria": [
@@ -42,8 +53,8 @@
                 "All tests pass",
                 "Typecheck passes"
             ],
-            "priority": 3,
-            "passes": false,
+            "priority": 4,
+            "passes": true,
             "notes": ""
         }
     ]

@@ -19,3 +19,22 @@
   - mypy requires explicit configuration to play nice with pre-commit and existing code.
   - Tests needed loose type annotations (Dict[str, Any]) to satisfy strict checks without massive refactoring.
 ---
+
+## 2026-01-20T22:25 - US-003 Fix current pytest that is failing
+- Fixed incorrect patch path in `backend/tests/test_config.py`.
+- Verified `pytest` passes (36 passed, 33 warnings).
+- Verified `pre-commit run --all-files` passes.
+- Files changed: `backend/tests/test_config.py`
+- **Learnings:**
+  - Mocking/patching requires the full module path matching the import in the test file.
+---
+
+## 2026-01-20T22:36 - US-004 Add Agent Integration Tests
+- Rewrote `backend/tests/test_agents.py` with comprehensive integration tests using proper mocks.
+- Verified instantiation and prompt loading for ACI, Infoblox, Palo Alto, Orchestrator, and Triage agents.
+- Verified that all tests pass (`pytest` and `pre-commit run --all-files`).
+- Files changed: `backend/tests/test_agents.py`
+- **Learnings:**
+  - `create_react_agent` logic was verified to use `prompt` correctly.
+  - Patching modules requires targeting the specific module where the symbol is imported or used.
+---
