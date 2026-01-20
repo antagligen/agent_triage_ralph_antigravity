@@ -15,3 +15,16 @@
   - Event structure: `{event, name, metadata, data}` where data contains input/output
   - Need to use `version="v2"` for astream_events to get proper event format
 ---
+
+## 2026-01-20 23:18 - US-002: Standardize SSE event format for sub-agent thoughts
+- **What was implemented:**
+  - Backend already emits thought events with `{node, status, message, timestamp}` schema from US-001
+  - Updated `frontend/app.py` to consume new thought event format using `message` field
+  - Added status icons: 🔄 (chain_start), 🔧 (tool_start), ✅ (chain_end)
+- **Files changed:**
+  - `frontend/app.py` - Updated to handle standardized thought event schema with status icons
+- **Verification:**
+  - Tested with Gemini provider at localhost:8501
+  - Confirmed thought events display with correct format and icons
+  - Triage Report renders properly after thoughts
+---

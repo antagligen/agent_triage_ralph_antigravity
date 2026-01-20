@@ -123,12 +123,16 @@ if prompt := st.chat_input("How can I help you troubleshoot?"):
                                 data = json.loads(data_str)
 
                                 if event_type == "thought":
-                                    # Handle internal thought events
+                                    # Handle internal thought events (standardized format)
                                     node = data.get("node", "Unknown")
-                                    content = data.get("content", "")
+                                    status = data.get("status", "")
+                                    message = data.get("message", "")
+
+                                    # Format status indicator
+                                    status_icon = "🔄" if status == "chain_start" else "🔧" if status == "tool_start" else "✅" if status == "chain_end" else "💭"
 
                                     # Append to the thought log
-                                    new_thought = f"**[{node}]**: {content}\n\n"
+                                    new_thought = f"{status_icon} **[{node}]**: {message}\n\n"
                                     thought_text += new_thought
                                     thought_expander.markdown(thought_text)
 
@@ -168,18 +172,9 @@ if prompt := st.chat_input("How can I help you troubleshoot?"):
                                 # For this pass, we'll append everything to full_response
                                 # AND show it in thoughts.
 
-                                # Refinement: Only show "Assistant" final text if we identify it.
-                                # But per backend code:
-                                # yield f"event: thought\ndata: {data}\n\n"
-                                # It doesn't distinguish final answer well yet.
-
-                                # Strategy: Just accumulate content for the main display?
-                                # Or if it is a specific node?
-                                # Let's mirror the content to the main chat for now.
-                                if data.get("content"):
-                                    chunk = data.get("content")
-                                    full_response += chunk
-                                    message_placeholder.markdown(full_response + "▌")
+                                # Note: The new standardized format uses `message` field for
+                                # thought events, not `content`. The `triage_report` event
+                                # handles the final response display.
 
                             except json.JSONDecodeError:
                                 pass # formatting error or keepalive
