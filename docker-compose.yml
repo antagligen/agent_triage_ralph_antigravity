@@ -1,10 +1,5 @@
-secrets:
-  backend_api_key:
-    file: ./secrets/backend_api_key.txt
-  frontend_secret:
-    file: ./secrets/frontend_secret.txt
-  google_api_key:
-    file: ./secrets/GOOGLE_API_KEY.txt
+version: '3.8'
+
 services:
   backend:
     build: ./backend
@@ -17,6 +12,10 @@ services:
     secrets:
       - source: google_api_key
         target: GOOGLE_API_KEY
+      - source: aci_username
+        target: ACI_USERNAME
+      - source: aci_password
+        target: ACI_PASSWORD
     restart: unless-stopped
     entrypoint: [ "/usr/local/bin/entrypoint.sh" ]
     command: [ "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8000" ]
@@ -35,3 +34,15 @@ services:
       - backend
     secrets:
       - frontend_secret
+
+secrets:
+  backend_api_key:
+    file: ./secrets/backend_api_key.txt
+  frontend_secret:
+    file: ./secrets/frontend_secret.txt
+  google_api_key:
+    file: ./secrets/GOOGLE_API_KEY.txt
+  aci_username:
+    file: ./secrets/aci_username.txt
+  aci_password:
+    file: ./secrets/aci_password.txt

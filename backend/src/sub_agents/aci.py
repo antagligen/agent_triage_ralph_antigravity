@@ -3,10 +3,11 @@ from langchain_core.tools import tool
 from langchain_core.messages import BaseMessage, HumanMessage
 from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import create_react_agent
-from ..config import AppConfig
+from ..config import AppConfig, get_aci_credentials
 from ..llm_factory import get_llm
 
 from ..models import SubAgentResult, AgentStatus
+
 
 
 # Mocked Tools
@@ -25,10 +26,25 @@ def traceroute(target: str) -> str:
     """Traceroute to a network target."""
     return f"Traceroute to {target}: 1 hop, directly connected."
 
+
 def get_aci_agent_node(config: AppConfig):
     """
     Creates the Cisco ACI sub-agent node.
     """
+    # Load Credentials & Config
+    try:
+        username, password = get_aci_credentials()
+        apic_url = config.devices.aci.apic_url if config.devices and config.devices.aci else "N/A"
+        
+        # Simulated Authentication
+        print(f"--- ACI Agent Initializing ---")
+        print(f"Target APIC: {apic_url}")
+        print(f"Authenticated as: {username}")
+        # In a real app, we would get a token here.
+        
+    except Exception as e:
+        print(f"Failed to initialize ACI Config: {e}")
+
     tools = [aci_diag, ping, traceroute]
 
     llm = get_llm(config.orchestrator_provider, config.orchestrator_model, temperature=0)

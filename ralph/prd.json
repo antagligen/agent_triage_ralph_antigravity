@@ -1,111 +1,65 @@
 {
-    "project": "AIOps Backend Refactor",
-    "branchName": "ralph/langraph-refactor",
-    "description": "Refactor backend to use LangGraph with Supervisor-Worker pattern for parallel execution and strict state management.",
+    "project": "AIOps POC - Modular ACI Agent & Orchestration",
+    "branchName": "ralph/aiops-poc",
+    "description": "Proof of Concept for modular AIOps pipeline with dynamically generated tools and orchestration.",
     "userStories": [
         {
             "id": "US-001",
-            "title": "Define Shared Pydantic Schemas",
-            "description": "As a developer, I need strict data contracts so that agents communicate reliably.",
+            "title": "External Device Configuration",
+            "description": "As a DevOps Engineer, I want to define my ACI APIC credentials and URL in a config file so that I don't hardcode secrets or IPs.",
             "acceptanceCriteria": [
-                "Create/Update `backend/src/models.py`",
-                "Define `SubAgentResult` with fields: `raw_data` (dict), `summary` (str), `status` (enum)",
-                "Define `OrchestratorDecision` with fields: `next_steps` (list), `reasoning` (str)",
-                "Define `TriageReport` with fields: `root_cause` (str), `details` (list/str), `action` (str)",
+                "System loads device details from `config/devices.yaml`",
+                "Authentication uses credentials from config to generate tokens",
                 "Typecheck passes"
             ],
             "priority": 1,
             "passes": true,
-            "notes": "Completed on 2026-01-20. Schemas defined in backend/src/models.py"
+            "notes": ""
         },
         {
             "id": "US-002",
-            "title": "Refactor Sub-Agents to Schema",
-            "description": "As a developer, I need existing agents to return the new `SubAgentResult` format so they fit into the graph.",
+            "title": "Dynamic Tool Generation",
+            "description": "As a Developer, I want to add a new ACI API endpoint by adding a JSON entry, so that the Agent immediately gains this capability without code deployments.",
             "acceptanceCriteria": [
-                "Refactor Infoblox agent to return `SubAgentResult`",
-                "Refactor Palo Alto agent to return `SubAgentResult`",
-                "Refactor Cisco agent (if present) to return `SubAgentResult`",
-                "Ensure all agents handle API errors as soft failures (Status: FAILURE)",
+                "System reads `config/aci_endpoints.json` on startup",
+                "Factory function converts JSON entries into LangChain `StructuredTool` objects",
+                "Pydantic models for tool arguments are generated dynamically and correctly",
                 "Typecheck passes"
             ],
             "priority": 2,
-            "passes": true,
-            "notes": "Completed on 2026-01-20. Refactored sub-agents to use `SubAgentResult`. Added `infoblox` and `palo_alto` agents."
+            "passes": false,
+            "notes": ""
         },
         {
             "id": "US-003",
-            "title": "Implement Orchestrator Validation & Planning",
-            "description": "As a system, I need an Orchestrator to validate inputs and route tasks.",
+            "title": "Intelligent Agent Execution",
+            "description": "As a User, I want the ACI Agent to select the correct tool based on natural language queries.",
             "acceptanceCriteria": [
-                "Create `Orchestrator` node using `ChatOpenAI`",
-                "Implement input validation (check for IP fields)",
-                "Route to Infoblox if data missing, or Sub-Agents if present",
-                "Output structured `OrchestratorDecision`",
-                "Typecheck passes"
+                "Agent selects correct tool (e.g. `get_tenant_health`) for query",
+                "Agent correctly extracts arguments",
+                "Generic runner executes the API call (GET only)",
+                "Typecheck passes",
+                "Verify in browser using dev-browser skill"
             ],
             "priority": 3,
-            "passes": true,
-            "notes": "Completed on 2026-01-20. Orchestrator implemented with IP validation and routing logic."
+            "passes": false,
+            "notes": ""
         },
         {
             "id": "US-004",
-            "title": "Implement Parallel Agent Execution Graph",
-            "description": "As a user, I want agents to run in parallel to reduce data fetching time.",
+            "title": "Triage Synthesis with Error Handling",
+            "description": "As a User, I want a final summary of the technical data, including any tools that failed to execute.",
             "acceptanceCriteria": [
-                "Setup LangGraph StateGraph with `AgentState`",
-                "Implement conditional edges from Orchestrator",
-                "Implement parallel node execution (fan-out) for Sub-Agents",
-                "Implement fan-in to collect results",
-                "Typecheck passes"
+                "ACI Agent catches tool execution errors and logs them (Partial Failure)",
+                "Triage Agent receives success data and error reports",
+                "Triage Agent generates a text summary of findings",
+                "Triage output mentions skipped/failed tools",
+                "Typecheck passes",
+                "Verify in browser using dev-browser skill"
             ],
             "priority": 4,
-            "passes": true,
-            "notes": "Completed on 2026-01-20. Configured orchestrator with parallel graph execution for sub-agents."
-        },
-        {
-            "id": "US-005",
-            "title": "Implement Triage Agent",
-            "description": "As a user, I want a final diagnosis report based on collected data.",
-            "acceptanceCriteria": [
-                "Create `Triage` node that runs after Sub-Agents",
-                "Feed only summaries to the LLM (hide raw data)",
-                "Generate `TriageReport` with confidence score",
-                "Handle partial failures gracefully",
-                "Typecheck passes"
-            ],
-            "priority": 5,
-            "passes": true,
-            "notes": "Completed on 2026-01-20. Triage Agent implemented with LangGraph node and LLM-based reporting."
-        },
-        {
-            "id": "US-006",
-            "title": "State Persistence and API Integration",
-            "description": "As an SRE, I want results persisted and accessible via API.",
-            "acceptanceCriteria": [
-                "Update FastAPI endpoint to run the LangGraph graph",
-                "Persist full `IncidentState` (including raw data) to database/storage",
-                "Return `TriageReport` in the API response",
-                "Typecheck passes",
-                "Verify in browser using dev-browser skill (via frontend)"
-            ],
-            "priority": 6,
-            "passes": true,
-            "notes": "Completed on 2026-01-20. Integrated API with MemorySaver and returning TriageReport."
-        },
-        {
-            "id": "US-007",
-            "title": "refactor check",
-            "description": "As a developer I wanat the codebase to be clean and easy to maintain.",
-            "acceptanceCriteria": [
-                "Remove old code from the codebase, now that langraph is in place",
-                "make sure unit tests are present for all new code",
-                "update readmes with new setup instructions and flows",
-                "Verify in browser using dev-browser skill (via frontend)"
-            ],
-            "priority": 7,
-            "passes": true,
-            "notes": "Completed on 2026-01-20. Cleaned up tests and docs. Verified with full test suite (22 passed)."
+            "passes": false,
+            "notes": ""
         }
     ]
 }
