@@ -21,19 +21,25 @@ def test_chat_returns_triage_report(mock_build_graph):
         action="Fix it"
     )
 
-    # Mock stream_graph_events logic indirectly by mocking what build_graph returns
-    # But main.py calls stream_graph_events(app_workflow, ...)
-    # which iterates app_workflow.astream(...)
+    # Mock astream_events to yield events in the new format
+    # The streaming.py now uses astream_events with version="v2"
+    async def mock_astream_events(*args, **kwargs):
+        # Yield on_chain_start for orchestrator
+        yield {
+            "event": "on_chain_start",
+            "name": "orchestrator",
+            "metadata": {"langgraph_node": "orchestrator"},
+            "data": {}
+        }
+        # Yield on_chain_end with triage_report in the output
+        yield {
+            "event": "on_chain_end",
+            "name": "triage",
+            "metadata": {"langgraph_node": "triage"},
+            "data": {"output": {"triage_report": report}}
+        }
 
-    # So we need to mock app_workflow.astream to yield events
-
-    async def mock_astream(*args, **kwargs):
-        # Yield a partial thought
-        yield {"orchestrator": {"messages": [MagicMock(content="Thinking...", type="ai")]}}
-        # Yield the triage report
-        yield {"triage": {"triage_report": report}}
-
-    mock_workflow.astream = mock_astream
+    mock_workflow.astream_events = mock_astream_events
     mock_build_graph.return_value = mock_workflow
 
     response = client.post("/chat", json={"message": "Help me"})
@@ -41,9 +47,9 @@ def test_chat_returns_triage_report(mock_build_graph):
     assert response.status_code == 200
     content = response.text
 
-    # Check for event: thought
+    # Check for event: thought (on_chain_start)
     assert "event: thought" in content
-    assert "Thinking..." in content
+    assert "orchestrator" in content
 
     # Check for event: triage_report
     assert "event: triage_report" in content

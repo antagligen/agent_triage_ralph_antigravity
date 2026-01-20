@@ -1,0 +1,74 @@
+{
+    "project": "Bug Fixes and QA",
+    "branchName": "ralph/bug-fixes-and-qa",
+    "description": "Fix the create_react_agent TypeError immediately. Prevent regression by adding pre-commit hooks. Improve test coverage with validation tests.",
+    "userStories": [
+        {
+            "id": "US-001",
+            "title": "Fix create_react_agent TypeError",
+            "description": "As a user, I want the chat to work without 500 errors, so I can use the agent.",
+            "acceptanceCriteria": [
+                "Investigate valid arguments for `create_react_agent` in the installed version",
+                "Update `backend/src/sub_agents/infoblox.py` (and others) to pass the system prompt correctly",
+                "Manual test: Verify chat runs without TypeError",
+                "Typecheck passes"
+            ],
+            "priority": 1,
+            "passes": true,
+            "notes": ""
+        },
+        {
+            "id": "US-002",
+            "title": "Add Pre-commit Hooks",
+            "description": "As a developer, I want pytest and mypy to run before commit, so I don't break the build.",
+            "acceptanceCriteria": [
+                "Add `.pre-commit-config.yaml` with `pytest` and `mypy` hooks",
+                "Ensure `mypy` runs in strict mode or consistent with current usage",
+                "Verify `pre-commit run --all-files` passes (or fix existing issues)",
+                "Typecheck passes"
+            ],
+            "priority": 2,
+            "passes": true,
+            "notes": ""
+        },
+        {
+            "id": "US-003",
+            "title": "Fix current pytest that is failing",
+            "description": "As a developer, I want tests functioning before continuing with other tasks",
+            "acceptanceCriteria": [
+                "pre-commit and pytest passes"
+            ],
+            "priority": 3,
+            "passes": true,
+            "notes": ""
+        },
+        {
+            "id": "US-004",
+            "title": "Add Agent Integration Tests",
+            "description": "As a developer, I want to confirm that agents load and respond correctly, so I can catch issues like the `TypeError` earlier.",
+            "acceptanceCriteria": [
+                "Add integration tests in `backend/tests/test_agents.py`",
+                "Test instantiation of all agents (Orchestrator, ACI, Infoblox, Palo Alto, Triage)",
+                "Mock LLM calls to verify agent graph structure and prompt loading",
+                "All tests pass",
+                "Typecheck passes"
+            ],
+            "priority": 4,
+            "passes": true,
+            "notes": ""
+        },
+        {
+            "id": "US-005",
+            "title": "Fix Entrypoint CRLF Issue",
+            "description": "As a user, I want the backend container to start on Windows without 'no such file' errors caused by line endings.",
+            "acceptanceCriteria": [
+                "Investigate missing entrypoint error",
+                "Fix CRLF line endings in Dockerfile",
+                "Verify build encompasses the fix"
+            ],
+            "priority": 1,
+            "passes": true,
+            "notes": "Added ad-hoc during troubleshooting session"
+        }
+    ]
+}

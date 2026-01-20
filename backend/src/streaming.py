@@ -1,72 +1,98 @@
 import json
 from typing import Any, AsyncGenerator, Dict, Optional
+from datetime import datetime, timezone
 
-async def stream_graph_events(workflow: Any, inputs: Dict[str, Any], run_config: Optional[Dict[str, Any]] = None) -> AsyncGenerator[str, None]:
+
+async def stream_graph_events(
+    workflow: Any,
+    inputs: Dict[str, Any],
+    run_config: Optional[Dict[str, Any]] = None
+) -> AsyncGenerator[str, None]:
     """
     Generator that creates SSE events from the LangGraph stream.
+
+    Uses astream_events() to capture detailed lifecycle events from sub-agents:
+    - on_chain_start: When a sub-agent begins execution
+    - on_tool_start: When a tool is being called
+    - on_chain_end: When a sub-agent finishes execution
     """
     if run_config is None:
         run_config = {}
 
-    # Use .astream_events or .stream for detailed updates
-    # simple .stream returns state updates
-    async for event in workflow.astream(inputs, config=run_config, stream_mode="updates"):
-        # Helper to format SSE
-        # event is a dict of {node_name: state_update}
+    # Events we care about for sub-agent thought streaming
+    target_events = {"on_chain_start", "on_tool_start", "on_chain_end"}
 
-        for node_name, state_update in event.items():
-            # We treat node updates as "thoughts" unless it's the final answer
+    async for event in workflow.astream_events(inputs, config=run_config, version="v2"):
+        event_type = event.get("event", "")
 
-            # If we have a new message
-            if "messages" in state_update:
-                messages = state_update["messages"]
-                # For this simple graph, messages is usually a single message or list of messages
-                if not isinstance(messages, list):
-                    messages = [messages]
+        # Filter to only the events we care about
+        if event_type not in target_events:
+            continue
 
-                for msg in messages:
-                    # Construct valid JSON data
-                    data = json.dumps({
-                        "node": node_name,
-                        "content": msg.content,
-                        "type": msg.type
-                    })
+        # Extract metadata for context
+        metadata = event.get("metadata", {})
+        data = event.get("data", {})
+        name = event.get("name", "")
 
-                    if node_name == "orchestrator":
-                        yield f"event: thought\ndata: {data}\n\n"
-                    elif node_name == "network_specialist":
-                         yield f"event: thought\ndata: {data}\n\n"
+        # Get the langgraph node name from metadata (tells us which agent)
+        node_name = metadata.get("langgraph_node", "")
 
-            # Handle Decision (Reasoning)
-            if "decision" in state_update:
-                decision = state_update["decision"]
-                reasoning = None
-                if isinstance(decision, dict):
-                    reasoning = decision.get("reasoning")
-                else:
-                    reasoning = getattr(decision, "reasoning", None)
+        # Skip events without a node context
+        if not node_name:
+            continue
 
-                if reasoning:
-                    data = json.dumps({
-                        "node": node_name,
-                        "content": reasoning,
-                        "type": "ai"
-                    })
-                    yield f"event: thought\ndata: {data}\n\n"
+        # Build the thought event based on event type
+        thought_data: Dict[str, Any] = {
+            "node": node_name,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+        }
 
-            # Handle Triage Report
-            if "triage_report" in state_update and state_update["triage_report"]:
-                report = state_update["triage_report"]
-                # Convert Pydantic model to dict
-                if hasattr(report, "dict"):
-                     report_data = report.dict()
-                else:
-                     report_data = report # assume dict if not pydantic
+        if event_type == "on_chain_start":
+            thought_data["status"] = "chain_start"
+            thought_data["message"] = f"Starting {name or node_name}..."
 
-                data = json.dumps(report_data)
-                yield f"event: triage_report\ndata: {data}\n\n"
+        elif event_type == "on_tool_start":
+            tool_name = name or "unknown tool"
+            tool_input = data.get("input", {})
+            thought_data["status"] = "tool_start"
+            thought_data["message"] = f"Calling tool: {tool_name}"
+            thought_data["tool_name"] = tool_name
+            if tool_input:
+                thought_data["tool_input"] = tool_input
 
-            # If we have next_node info (useful for debugging)
-            if "next_node" in state_update:
-                 data = json.dumps({"routing": state_update["next_node"]})
-                 yield f"event: routing\ndata: {data}\n\n"
+        elif event_type == "on_chain_end":
+            thought_data["status"] = "chain_end"
+            thought_data["message"] = f"Finished {name or node_name}"
+            # Include output summary if available
+            output = data.get("output", None)
+            if output and isinstance(output, dict):
+                # Summarize output for display
+                thought_data["output_keys"] = list(output.keys())
+
+        # Emit as SSE thought event
+        sse_data = json.dumps(thought_data)
+        yield f"event: thought\ndata: {sse_data}\n\n"
+
+        # --- Legacy state update handling for backwards compatibility ---
+        # Also emit triage_report if present in output
+        if event_type == "on_chain_end":
+            output = data.get("output", {})
+            if isinstance(output, dict):
+                # Handle Triage Report
+                if "triage_report" in output and output["triage_report"]:
+                    report = output["triage_report"]
+                    # Convert Pydantic model to dict
+                    if hasattr(report, "dict"):
+                        report_data = report.dict()
+                    elif hasattr(report, "model_dump"):
+                        report_data = report.model_dump()
+                    else:
+                        report_data = report  # assume dict if not pydantic
+
+                    report_json = json.dumps(report_data)
+                    yield f"event: triage_report\ndata: {report_json}\n\n"
+
+                # Handle routing info for debugging
+                if "next_node" in output:
+                    routing_data = json.dumps({"routing": output["next_node"]})
+                    yield f"event: routing\ndata: {routing_data}\n\n"
