@@ -1,0 +1,22 @@
+[
+    {
+        "name": "get_tenant_health",
+        "description": "Retrieves the health score of a specific ACI tenant.",
+        "path": "/api/node/mo/uni/tn-{tenant}.json?query-target=self",
+        "method": "GET",
+        "parameters": [
+            {
+                "name": "tenant",
+                "type": "str",
+                "description": "The name of the tenant to query."
+            }
+        ]
+    },
+    {
+        "name": "get_fabric_health",
+        "description": "Retrieves the overall health score of the ACI fabric.",
+        "path": "/api/node/mo/topology/HDfabricOverallHealth5min-0.json",
+        "method": "GET",
+        "parameters": []
+    }
+]

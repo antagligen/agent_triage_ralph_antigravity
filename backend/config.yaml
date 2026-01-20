@@ -1,4 +1,5 @@
-orchestrator_model: "gpt-4-turbo"
+orchestrator_model: "gemini-1.5-flash"
+orchestrator_provider: "google"
 system_prompt: "You are a helpful AI troublehsooting assistant. Route queries to the appropriate expert."
 
 sub_agents:

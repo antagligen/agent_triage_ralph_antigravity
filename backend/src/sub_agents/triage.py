@@ -20,23 +20,43 @@ def get_triage_node(config: AppConfig):
         sub_agent_results: List[SubAgentResult] = state.get("sub_agent_results", [])
         incident_data = state.get("incident_data", {})
 
-        # Prepare payload for the LLM
-        summaries = []
+        # Separate successful and failed results
+        successful_results = []
+        failed_results = []
         for res in sub_agent_results:
-            summaries.append(f"Agent Status: {res.status}\nSummary: {res.summary}")
+            if res.status.value == "FAILURE":
+                failed_results.append(res)
+            else:
+                successful_results.append(res)
         
-        summaries_text = "\n---\n".join(summaries)
+        # Build list of failed agent names
+        failed_agent_names = [res.agent_name for res in failed_results]
+
+        # Prepare payload for the LLM
+        success_summaries = []
+        for res in successful_results:
+            success_summaries.append(f"Agent: {res.agent_name}\nStatus: {res.status}\nSummary: {res.summary}")
+        
+        failure_summaries = []
+        for res in failed_results:
+            failure_summaries.append(f"Agent: {res.agent_name}\nStatus: {res.status}\nError: {res.summary}")
+        
+        success_text = "\n---\n".join(success_summaries) if success_summaries else "No successful results."
+        failure_text = "\n---\n".join(failure_summaries) if failure_summaries else "None."
         
         system_prompt = (
             "You are a Senior Site Reliability Engineer (SRE). "
             "Your task is to analyze the following connectivity triage reports from various sub-agents "
             "and determine the root cause of the issue.\n\n"
+            "IMPORTANT: If any agents failed to execute, you MUST mention them in your analysis. "
+            "Explain that data from those sources is unavailable and recommend manual investigation for those areas.\n\n"
             "Provide a concise Root Cause, Detailed Explanation, and Recommended Action."
         )
         
         user_content = (
             f"Incident Data: {incident_data}\n\n"
-            f"Sub-Agent Reports:\n{summaries_text}"
+            f"Successful Agent Reports:\n{success_text}\n\n"
+            f"Failed Agents:\n{failure_text}"
         )
 
         try:
@@ -49,12 +69,17 @@ def get_triage_node(config: AppConfig):
                  # Fallback/Error handling if the structured output fails to parse into the object directly
                  # In runtime with real LLM this should work if with_structured_output is correct
                  pass
+            
+            # Ensure failed_agents is populated even if LLM didn't return it
+            if isinstance(report, TriageReport):
+                report.failed_agents = failed_agent_names
                  
         except Exception as e:
             report = TriageReport(
                 root_cause="Analysis Failed",
                 details=f"Failed to generate triage report due to error: {str(e)}",
-                action="Manual investigation required"
+                action="Manual investigation required",
+                failed_agents=failed_agent_names
             )
 
         return {"triage_report": report}

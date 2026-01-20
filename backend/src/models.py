@@ -9,6 +9,7 @@ class AgentStatus(str, Enum):
 
 class SubAgentResult(BaseModel):
     """Result from a sub-agent execution."""
+    agent_name: str = Field(description="Name of the agent that produced this result")
     raw_data: Dict[str, Any] = Field(description="Raw data returned by the tool/API")
     summary: str = Field(description="Human-readable summary of the findings")
     status: AgentStatus = Field(description="Status of the execution")
@@ -23,3 +24,4 @@ class TriageReport(BaseModel):
     root_cause: str = Field(description="Identified root cause of the issue")
     details: Union[List[str], str] = Field(description="Detailed explanation or evidence")
     action: str = Field(description="Recommended action to resolve the issue")
+    failed_agents: List[str] = Field(default_factory=list, description="List of agents that failed to execute")

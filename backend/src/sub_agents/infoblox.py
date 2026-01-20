@@ -1,7 +1,6 @@
 from typing import List, Annotated
 from langchain_core.tools import tool
 from langchain_core.messages import BaseMessage
-from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import create_react_agent
 from ..config import AppConfig
 from ..llm_factory import get_llm
@@ -35,12 +34,14 @@ def get_infoblox_agent_node(config: AppConfig):
             summary = last_msg.content if hasattr(last_msg, "content") else str(last_msg)
             
             return SubAgentResult(
+                agent_name="infoblox",
                 raw_data={"messages": [m.content for m in result["messages"]]},
                 summary=str(summary),
                 status=AgentStatus.SUCCESS
             )
         except Exception as e:
             return SubAgentResult(
+                agent_name="infoblox",
                 raw_data={"error": str(e)},
                 summary=f"Error executing Infoblox agent: {str(e)}",
                 status=AgentStatus.FAILURE
