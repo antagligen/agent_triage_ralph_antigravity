@@ -8,7 +8,7 @@ from typing import TypedDict, Annotated, Sequence, Literal, List, Dict, Any, cas
 import operator
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.graph import StateGraph, END
-from .config import AppConfig
+from .config import AppConfig, load_system_prompt
 from .llm_factory import get_llm
 from .models import OrchestratorDecision, SubAgentResult, TriageReport
 from .sub_agents.infoblox import get_infoblox_agent_node
@@ -52,9 +52,10 @@ def get_orchestrator_node(config: AppConfig):
             return {"next_node": "infoblox", "decision": decision}
 
         # 2. LLM Planning Logic
+        # Load orchestrator prompt from file (falls back to default if missing)
+        orchestrator_prompt = load_system_prompt('orchestrator')
         system_message = (
-            f"{config.system_prompt}\n\n"
-            f"You are the Request Orchestrator.\n"
+            f"{orchestrator_prompt}\n\n"
             f"Current Incident Data: {incident_data}\n"
             f"The user has provided sufficient IP information. Analyze the request to confirm if we should proceed with firewall checks.\n"
             f"If standard diagnostics are needed, route to 'aci' and 'palo_alto'.\n"

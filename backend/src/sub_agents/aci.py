@@ -2,7 +2,7 @@ from typing import List, Annotated
 from langchain_core.tools import tool
 from langchain_core.messages import BaseMessage, HumanMessage
 from langgraph.prebuilt import create_react_agent
-from ..config import AppConfig, get_aci_credentials
+from ..config import AppConfig, get_aci_credentials, load_system_prompt
 from ..llm_factory import get_llm
 
 from ..models import SubAgentResult, AgentStatus
@@ -80,7 +80,8 @@ def get_aci_agent_node(config: AppConfig):
 
     llm = get_llm(config.orchestrator_provider, config.orchestrator_model, temperature=0)
     
-    agent = create_react_agent(llm, tools=tools)
+    system_prompt = load_system_prompt("aci")
+    agent = create_react_agent(llm, tools=tools, state_modifier=system_prompt)
     
     def aci_node(state) -> SubAgentResult:
         try:

@@ -91,6 +91,22 @@ sub_agents:
 ### Environment Variables
 Sensitive keys are stored in Docker secrets, the Dockerfile mounts them from the `secrets` directory.
 
+### Configurable System Prompts
+System prompts for the Orchestrator and all agents are located in `backend/system_prompts/`. These text files allow you to iterate on agent behavior without changing Python code.
+
+- **Directory**: `backend/system_prompts/`
+- **Files**:
+  - `orchestrator.txt`
+  - `triage.txt`
+  - `aci.txt`, `infoblox.txt`, `palo_alto.txt`
+
+#### Editing Prompts
+- **Orchestrator & Triage**: Changes to `orchestrator.txt` and `triage.txt` are **hot-reloaded**. You can edit these files while the server is running, and the next request will use the updated prompt.
+- **Sub-Agents (ACI, Infoblox, Palo Alto)**: These prompts are loaded at startup. You must **restart the backend server** for changes to take effect.
+
+#### Fallback Mechanism
+If a prompt file is missing or deleted, the system will fall back to a hardcoded default prompt defined in `src/config.py` and log a warning.
+
 ## 🏗️ Architecture (LangGraph)
 
 The core logic resides in `src/orchestrator.py`. This module builds a LangGraph `StateGraph` that orchestrates parallel sub-agent execution.

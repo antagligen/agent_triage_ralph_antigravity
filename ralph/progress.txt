@@ -1,53 +1,79 @@
 # Ralph Progress Log
 ---
 
-## 2026-01-20 - US-001
-- Implemented `config/devices.yaml` for non-sensitive config.
-- Implemented Docker Secrets for `ACI_USERNAME` and `ACI_PASSWORD`.
-- Created `backend/src/config.py` loader.
-- Updated ACI agent to use config.
+## 2026-01-20T21:04 - US-001 Create Prompt File Structure
+- Created `backend/system_prompts/` directory
+- Created all 5 prompt files:
+  - `orchestrator.txt` - Request routing instructions
+  - `aci.txt` - Cisco ACI fabric diagnostics
+  - `infoblox.txt` - IPAM and DNS queries
+  - `palo_alto.txt` - Firewall diagnostics
+  - `triage.txt` - SRE analysis instructions
+- Files changed: 5 new files in `backend/system_prompts/`
 - **Learnings:**
-  - `docker-compose` secrets injection requires careful YAML structuring (avoid duplicate keys).
-  - `entrypoint.sh` works well for converting file secrets to env vars.
+  - Sub-agents (ACI, Infoblox, Palo Alto) currently use `create_react_agent()` without explicit system prompts
+  - Triage agent has hardcoded prompt in `triage.py` lines 47-54
+  - Orchestrator uses `config.system_prompt` plus inline additions
 ---
 
-## 2026-01-20 - US-002
-- Implemented `config/aci_endpoints.json` for definition of tools.
-- Implemented `backend/src/dynamic_tools.py` using Pydantic `create_model`.
-- Updated ACI Agent to load dynamic tools on startup.
+## 2026-01-20T21:08 - US-002 Implement Prompt Loading Utility
+- Added `load_system_prompt(agent_name: str) -> str` function to `backend/src/config.py`
+- Uses `pathlib.Path` for cross-platform path resolution
+- Added `DEFAULT_PROMPTS` dict with fallback prompts for all 5 agents
+- Logs warnings when file not found, debug when successfully loaded
+- Files changed: `backend/src/config.py`
 - **Learnings:**
-  - `pydantic.create_model` is powerful but requires careful type annotation for mypy.
-  - `StructuredTool.from_function` allows binding args (like `path` and `method`) to a generic runner function easily.
+  - PowerShell doesn't support `&&` for chaining commands, use `;` or separate commands
+  - `Path(__file__).resolve().parent.parent / "system_prompts"` works for Docker `/app/src` structure
 ---
 
-## 2026-01-20 - US-003
-- Upgraded `generic_aci_runner` in `dynamic_tools.py` to support real HTTP requests via `requests`.
-- Implemented `ACIToolConfig` to pass auth/config to the tool runner.
-- Added connection error handling and status code checks.
-- Verified with `test_agent_execution.py` (Mocked) and `mypy` (with stubs ignored for requests).
+## 2026-01-20T21:12 - US-003 Update Orchestrator to Use Configurable Prompt
+- Updated `backend/src/orchestrator.py` to import and use `load_system_prompt('orchestrator')`
+- Replaced `config.system_prompt` with configurable prompt loading
+- Prompt is now read from `backend/system_prompts/orchestrator.txt`
+- Files changed: `backend/src/orchestrator.py`
 - **Learnings:**
-  - Mocking `requests.request` is essential for testing Logic w/o real backend.
-  - Need to be careful with optional configs in generic runners to avoid NPEs.
+  - The orchestrator prompt can now be hot-reloaded from the text file
+  - Fallback mechanism ensures backward compatibility
 ---
 
-## 2026-01-20 - US-004
-- Added `agent_name` field to `SubAgentResult` in `models.py`.
-- Added `failed_agents` field to `TriageReport` in `models.py`.
-- Updated all 3 sub-agents (`aci.py`, `palo_alto.py`, `infoblox.py`) to include agent names.
-- Enhanced `triage.py` to separate successful/failed results and populate `failed_agents`.
-- Added `test_triage_node_partial_failure` test case.
+## 2026-01-20T21:23 - US-004 Update Sub-Agents with Configurable Prompts
+- Updated aci.py, infoblox.py, palo_alto.py to use load_system_prompt
+- Passed system prompt to create_react_agent via state_modifier
+- Validated with mypy
+- Files changed: backend/src/sub_agents/aci.py, backend/src/sub_agents/infoblox.py, backend/src/sub_agents/palo_alto.py
 - **Learnings:**
-  - Using `res.status.value` to compare enum values in Python when parsing status.
-  - LLM structured output may not populate all fields; need to set `failed_agents` manually after LLM call.
+  - create_react_agent accepts state_modifier for system prompts
 ---
 
-## 2026-01-20 - US-005
-- Investigated OpenAI API key error occurring at import time.
-- Root cause: Unused `ChatOpenAI` imports in `orchestrator.py`, `aci.py`, `infoblox.py`, and `palo_alto.py` triggered langchain-openai validation at import time.
-- Removed unused imports from all 4 files.
-- Verified typecheck passes (14 source files, no issues).
-- Verified end-to-end workflow in browser - Triage Report displayed correctly.
+## 2026-01-20T21:26 - US-005 Update Triage Agent with Configurable Prompt
+- Updated `backend/src/sub_agents/triage.py` to use `load_system_prompt('triage')`
+- Replaced hardcoded prompt with file-based loading
+- Validated with mypy
+- Files changed: `backend/src/sub_agents/triage.py`
 - **Learnings:**
-  - `langchain-openai` validates `OPENAI_API_KEY` at import time, even if the class is never instantiated.
-  - Always clean up unused imports to avoid unintended side effects.
+  - Triage agent uses `llm.with_structured_output`, but the system prompt is passed via `SystemMessage` in the invoke call, not via agent state modifier like the other agents.
+---
+
+## 2026-01-20T21:30 - US-006 Add Unit Tests for Prompt Loading
+- Created `backend/tests/test_config.py`
+- Implemented unit tests for `load_system_prompt`
+- Verified tests pass with `pytest`
+- Files changed: `backend/tests/test_config.py`
+- **Learnings:**
+  - Need to ensure `PYTHONPATH` includes `backend` when running tests from root.
+  - `pathlib.Path.read_text` should be mocked directly instead of `builtins.open` when used.
+---
+
+
+
+## 2026-01-20T21:26 - US-007 Update backend/readme
+- Updated `backend/README.md` to document Configurable System Prompts feature.
+- Added details on directory structure (`backend/system_prompts/`), editing instructions, and fallback mechanism.
+- Clarified hot-reload behavior for Orchestrator/Triage vs restart requirement for sub-agents.
+- Files changed: `backend/README.md`
+- **Learnings:**
+  - Confirmed Orchestrator and Triage reload prompts on every request (hot-reload).
+  - Confirmed sub-agents (ACI, Infoblox, Palo Alto) load prompts only on startup (cold-load).
+  - This distinction is critical for developers iterating on prompts.
 ---

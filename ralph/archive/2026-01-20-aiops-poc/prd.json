@@ -1,0 +1,78 @@
+{
+    "project": "AIOps POC - Modular ACI Agent & Orchestration",
+    "branchName": "ralph/aiops-poc",
+    "description": "Proof of Concept for modular AIOps pipeline with dynamically generated tools and orchestration.",
+    "userStories": [
+        {
+            "id": "US-001",
+            "title": "External Device Configuration",
+            "description": "As a DevOps Engineer, I want to define my ACI APIC credentials and URL in a config file so that I don't hardcode secrets or IPs.",
+            "acceptanceCriteria": [
+                "System loads device details from `config/devices.yaml`",
+                "Authentication uses credentials from config to generate tokens",
+                "Typecheck passes"
+            ],
+            "priority": 1,
+            "passes": true,
+            "notes": ""
+        },
+        {
+            "id": "US-002",
+            "title": "Dynamic Tool Generation",
+            "description": "As a Developer, I want to add a new ACI API endpoint by adding a JSON entry, so that the Agent immediately gains this capability without code deployments.",
+            "acceptanceCriteria": [
+                "System reads `config/aci_endpoints.json` on startup",
+                "Factory function converts JSON entries into LangChain `StructuredTool` objects",
+                "Pydantic models for tool arguments are generated dynamically and correctly",
+                "Typecheck passes"
+            ],
+            "priority": 2,
+            "passes": true,
+            "notes": ""
+        },
+        {
+            "id": "US-003",
+            "title": "Intelligent Agent Execution",
+            "description": "As a User, I want the ACI Agent to select the correct tool based on natural language queries.",
+            "acceptanceCriteria": [
+                "Agent selects correct tool (e.g. `get_tenant_health`) for query",
+                "Agent correctly extracts arguments",
+                "Generic runner executes the API call (GET only)",
+                "Typecheck passes",
+                "Verify in browser using dev-browser skill"
+            ],
+            "priority": 3,
+            "passes": true,
+            "notes": ""
+        },
+        {
+            "id": "US-004",
+            "title": "Triage Synthesis with Error Handling",
+            "description": "As a User, I want a final summary of the technical data, including any tools that failed to execute.",
+            "acceptanceCriteria": [
+                "ACI Agent catches tool execution errors and logs them (Partial Failure)",
+                "Triage Agent receives success data and error reports",
+                "Triage Agent generates a text summary of findings",
+                "Triage output mentions skipped/failed tools",
+                "Typecheck passes",
+                "Verify in browser using dev-browser skill"
+            ],
+            "priority": 4,
+            "passes": true,
+            "notes": ""
+        },
+        {
+            "id": "US-005",
+            "title": "Validate end-to-end functionality",
+            "description": "As a User, we should not get any errors when running the full workflow.",
+            "acceptanceCriteria": [
+                "when sending message through the chat, the llm response should be presented",
+                "no internal server error when running the full workflow",
+                "Following error fixed: File /usr/local/lib/python3.11/site-packages/openai/_client.py, line 488, in __init__raise OpenAIError(openai.OpenAIError: The api_key client option must be set either by passing api_key to the client or by setting the OPENAI_API_KEY environment variable"
+            ],
+            "priority": 5,
+            "passes": true,
+            "notes": "Removed unused ChatOpenAI imports that triggered API key validation at import time"
+        }
+    ]
+}
