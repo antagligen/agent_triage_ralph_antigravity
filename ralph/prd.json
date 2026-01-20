@@ -1,78 +1,89 @@
 {
-    "project": "AIOps POC - Modular ACI Agent & Orchestration",
-    "branchName": "ralph/aiops-poc",
-    "description": "Proof of Concept for modular AIOps pipeline with dynamically generated tools and orchestration.",
+    "project": "Configurable System Prompts",
+    "branchName": "ralph/configurable-prompts",
+    "description": "Extract hardcoded system prompts from Python code into external .txt files in backend/system_prompts/.",
     "userStories": [
         {
             "id": "US-001",
-            "title": "External Device Configuration",
-            "description": "As a DevOps Engineer, I want to define my ACI APIC credentials and URL in a config file so that I don't hardcode secrets or IPs.",
+            "title": "Create Prompt File Structure",
+            "description": "As a developer, I want a dedicated folder for system prompts so that I can easily find and edit them.",
             "acceptanceCriteria": [
-                "System loads device details from `config/devices.yaml`",
-                "Authentication uses credentials from config to generate tokens",
+                "Create `backend/system_prompts/` directory",
+                "Create prompt files: orchestrator.txt, aci.txt, infoblox.txt, palo_alto.txt, triage.txt",
+                "Each file contains appropriate default prompt text",
                 "Typecheck passes"
             ],
             "priority": 1,
             "passes": true,
-            "notes": ""
+            "notes": "Created backend/system_prompts/ with orchestrator.txt, aci.txt, infoblox.txt, palo_alto.txt, triage.txt"
         },
         {
             "id": "US-002",
-            "title": "Dynamic Tool Generation",
-            "description": "As a Developer, I want to add a new ACI API endpoint by adding a JSON entry, so that the Agent immediately gains this capability without code deployments.",
+            "title": "Implement Prompt Loading Utility",
+            "description": "As a developer, I want a utility function to load prompts from files so that agents can use external configurations.",
             "acceptanceCriteria": [
-                "System reads `config/aci_endpoints.json` on startup",
-                "Factory function converts JSON entries into LangChain `StructuredTool` objects",
-                "Pydantic models for tool arguments are generated dynamically and correctly",
+                "Add `load_system_prompt(agent_name: str) -> str` function to config.py",
+                "Function looks for `backend/system_prompts/{agent_name}.txt`",
+                "If file not found, logs warning and returns hardcoded default",
                 "Typecheck passes"
             ],
             "priority": 2,
             "passes": true,
-            "notes": ""
+            "notes": "Added load_system_prompt() with Path-based resolution, DEFAULT_PROMPTS fallback dict, and logging"
         },
         {
             "id": "US-003",
-            "title": "Intelligent Agent Execution",
-            "description": "As a User, I want the ACI Agent to select the correct tool based on natural language queries.",
+            "title": "Update Orchestrator to Use Configurable Prompt",
+            "description": "As a developer, I want the orchestrator to load its prompt from config so that I can customize its behavior.",
             "acceptanceCriteria": [
-                "Agent selects correct tool (e.g. `get_tenant_health`) for query",
-                "Agent correctly extracts arguments",
-                "Generic runner executes the API call (GET only)",
-                "Typecheck passes",
-                "Verify in browser using dev-browser skill"
+                "Orchestrator uses `load_system_prompt('orchestrator')`",
+                "Falls back to current behavior if file missing",
+                "Typecheck passes"
             ],
             "priority": 3,
-            "passes": true,
+            "passes": false,
             "notes": ""
         },
         {
             "id": "US-004",
-            "title": "Triage Synthesis with Error Handling",
-            "description": "As a User, I want a final summary of the technical data, including any tools that failed to execute.",
+            "title": "Update Sub-Agents with Configurable Prompts",
+            "description": "As a developer, I want sub-agents (ACI, Infoblox, Palo Alto) to use configurable system prompts.",
             "acceptanceCriteria": [
-                "ACI Agent catches tool execution errors and logs them (Partial Failure)",
-                "Triage Agent receives success data and error reports",
-                "Triage Agent generates a text summary of findings",
-                "Triage output mentions skipped/failed tools",
-                "Typecheck passes",
-                "Verify in browser using dev-browser skill"
+                "Each sub-agent uses `load_system_prompt()` for its prompt",
+                "Pass system prompt to `create_react_agent()` via `prompt` parameter",
+                "Falls back to default if file missing",
+                "Typecheck passes"
             ],
             "priority": 4,
-            "passes": true,
+            "passes": false,
             "notes": ""
         },
         {
             "id": "US-005",
-            "title": "Validate end-to-end functionality",
-            "description": "As a User, we should not get any errors when running the full workflow.",
+            "title": "Update Triage Agent with Configurable Prompt",
+            "description": "As a developer, I want the triage agent to use a configurable system prompt.",
             "acceptanceCriteria": [
-                "when sending message through the chat, the llm response should be presented",
-                "no internal server error when running the full workflow",
-                "Following error fixed: File /usr/local/lib/python3.11/site-packages/openai/_client.py, line 488, in __init__raise OpenAIError(openai.OpenAIError: The api_key client option must be set either by passing api_key to the client or by setting the OPENAI_API_KEY environment variable"
+                "Triage agent uses `load_system_prompt('triage')`",
+                "Falls back to current hardcoded prompt if file missing",
+                "Typecheck passes"
             ],
             "priority": 5,
-            "passes": true,
-            "notes": "Removed unused ChatOpenAI imports that triggered API key validation at import time"
+            "passes": false,
+            "notes": ""
+        },
+        {
+            "id": "US-006",
+            "title": "Add Unit Tests for Prompt Loading",
+            "description": "As a developer, I want tests to verify prompt loading behavior.",
+            "acceptanceCriteria": [
+                "Test loading existing prompt file returns content",
+                "Test loading missing file returns default and logs warning",
+                "All tests pass",
+                "Typecheck passes"
+            ],
+            "priority": 6,
+            "passes": false,
+            "notes": ""
         }
     ]
 }

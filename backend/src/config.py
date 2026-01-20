@@ -2,7 +2,53 @@ from typing import List, Optional
 import yaml
 import json
 import os
+import logging
+from pathlib import Path
 from pydantic import BaseModel, Field
+
+logger = logging.getLogger(__name__)
+
+# Default prompts for each agent (fallbacks if files are missing)
+DEFAULT_PROMPTS = {
+    "orchestrator": "You are the Request Orchestrator. Analyze incoming requests and route to appropriate sub-agents.",
+    "aci": "You are an expert Cisco ACI network diagnostics agent.",
+    "infoblox": "You are an Infoblox IPAM and DNS specialist.",
+    "palo_alto": "You are a Palo Alto firewall diagnostics expert.",
+    "triage": "You are an SRE triage specialist. Analyze information from sub-agents and provide a unified report.",
+}
+
+
+def load_system_prompt(agent_name: str) -> str:
+    """
+    Loads a system prompt from backend/system_prompts/{agent_name}.txt.
+    
+    Args:
+        agent_name: Name of the agent (orchestrator, aci, infoblox, palo_alto, triage)
+        
+    Returns:
+        The prompt text from the file, or a default prompt if file not found.
+    """
+    # Determine the base directory for system_prompts
+    # This works whether we're running from /app/src or /app
+    current_dir = Path(__file__).resolve().parent  # backend/src
+    prompts_dir = current_dir.parent / "system_prompts"  # backend/system_prompts
+    
+    prompt_file = prompts_dir / f"{agent_name}.txt"
+    
+    if prompt_file.exists():
+        try:
+            content = prompt_file.read_text(encoding="utf-8").strip()
+            logger.debug(f"Loaded system prompt for '{agent_name}' from {prompt_file}")
+            return content
+        except Exception as e:
+            logger.warning(f"Error reading prompt file for '{agent_name}': {e}")
+    else:
+        logger.warning(f"System prompt file not found: {prompt_file}")
+    
+    # Return default prompt
+    default = DEFAULT_PROMPTS.get(agent_name, f"You are a helpful {agent_name} agent.")
+    logger.info(f"Using default prompt for '{agent_name}'")
+    return default
 
 class SubAgentConfig(BaseModel):
     name: str = Field(..., description="Unique identifier for the sub-agent")
