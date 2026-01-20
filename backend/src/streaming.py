@@ -1,13 +1,16 @@
 import json
-from typing import Any, AsyncGenerator, Dict
+from typing import Any, AsyncGenerator, Dict, Optional
 
-async def stream_graph_events(workflow: Any, inputs: Dict[str, Any]) -> AsyncGenerator[str, None]:
+async def stream_graph_events(workflow: Any, inputs: Dict[str, Any], run_config: Optional[Dict[str, Any]] = None) -> AsyncGenerator[str, None]:
     """
     Generator that creates SSE events from the LangGraph stream.
     """
+    if run_config is None:
+        run_config = {}
+
     # Use .astream_events or .stream for detailed updates
     # simple .stream returns state updates
-    async for event in workflow.astream(inputs, stream_mode="updates"):
+    async for event in workflow.astream(inputs, config=run_config, stream_mode="updates"):
         # Helper to format SSE
         # event is a dict of {node_name: state_update}
         
@@ -33,15 +36,19 @@ async def stream_graph_events(workflow: Any, inputs: Dict[str, Any]) -> AsyncGen
                         yield f"event: thought\ndata: {data}\n\n"
                     elif node_name == "network_specialist":
                          yield f"event: thought\ndata: {data}\n\n"
-                    
-                    # If it's a direct response from orchestrator (final answer)
-                    # The logic in orchestrator returns END with a SystemMessage
-                    # We might need to distinguish "final" better. 
-                    # For now, let's assume the last message in the stream is the response, 
-                    # BUT streaming doesn't know "last" easily until done.
-                    # We'll just stream everything as thoughts and let the client decide, 
-                    # OR we can refine this.
             
+            # Handle Triage Report
+            if "triage_report" in state_update and state_update["triage_report"]:
+                report = state_update["triage_report"]
+                # Convert Pydantic model to dict
+                if hasattr(report, "dict"):
+                     report_data = report.dict()
+                else:
+                     report_data = report # assume dict if not pydantic
+                     
+                data = json.dumps(report_data)
+                yield f"event: triage_report\ndata: {data}\n\n"
+
             # If we have next_node info (useful for debugging)
             if "next_node" in state_update:
                  data = json.dumps({"routing": state_update["next_node"]})

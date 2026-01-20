@@ -45,3 +45,12 @@
   - `LangGraph` reducers like `operator.add` are essential for parallel writes to the state.
   - Patching `get_llm` globally in `llm_factory` is more reliable for testing sub-components that import it.
 ---
+
+## 2026-01-20 - US-005
+- Implemented `backend/src/sub_agents/triage.py` with `triage_node`.
+- Updated `backend/src/orchestrator.py` to route sub-agents to `triage` node.
+- Added `TriageReport` to `AgentState`.
+- Verified with `test_triage.py` and `mypy`.
+- **Learnings:**
+  - Separating data aggregation (Sub-Agents) from analysis (Triage) allows for cleaner LLM prompts and specific error handling.
+---

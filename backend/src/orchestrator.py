@@ -80,7 +80,7 @@ def get_orchestrator_node(config: AppConfig):
 
     return orchestrator_node
 
-def build_graph(config: AppConfig):
+def build_graph(config: AppConfig, checkpointer=None):
     """
     Builds the LangGraph state graph.
     """
@@ -157,6 +157,11 @@ def build_graph(config: AppConfig):
     workflow.add_edge("palo_alto", "triage")
     workflow.add_edge("triage", END)
 
-    return workflow.compile()
+    # 4. Persistence
+
+
+    # 4. Persistence
+    # Use passed checkpointer or default to None
+    return workflow.compile(checkpointer=checkpointer)
 
 
