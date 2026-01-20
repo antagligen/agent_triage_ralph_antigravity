@@ -29,3 +29,14 @@
   - Mocking `requests.request` is essential for testing Logic w/o real backend.
   - Need to be careful with optional configs in generic runners to avoid NPEs.
 ---
+
+## 2026-01-20 - US-004
+- Added `agent_name` field to `SubAgentResult` in `models.py`.
+- Added `failed_agents` field to `TriageReport` in `models.py`.
+- Updated all 3 sub-agents (`aci.py`, `palo_alto.py`, `infoblox.py`) to include agent names.
+- Enhanced `triage.py` to separate successful/failed results and populate `failed_agents`.
+- Added `test_triage_node_partial_failure` test case.
+- **Learnings:**
+  - Using `res.status.value` to compare enum values in Python when parsing status.
+  - LLM structured output may not populate all fields; need to set `failed_agents` manually after LLM call.
+---
