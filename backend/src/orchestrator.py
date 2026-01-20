@@ -8,8 +8,6 @@ from typing import TypedDict, Annotated, Sequence, Literal, List, Dict, Any, cas
 import operator
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from langgraph.graph import StateGraph, END
-from langchain_openai import ChatOpenAI
-
 from .config import AppConfig
 from .llm_factory import get_llm
 from .models import OrchestratorDecision, SubAgentResult, TriageReport

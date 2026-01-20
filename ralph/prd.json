@@ -60,6 +60,19 @@
             "priority": 4,
             "passes": true,
             "notes": ""
+        },
+        {
+            "id": "US-005",
+            "title": "Validate end-to-end functionality",
+            "description": "As a User, we should not get any errors when running the full workflow.",
+            "acceptanceCriteria": [
+                "when sending message through the chat, the llm response should be presented",
+                "no internal server error when running the full workflow",
+                "Following error fixed: File /usr/local/lib/python3.11/site-packages/openai/_client.py, line 488, in __init__raise OpenAIError(openai.OpenAIError: The api_key client option must be set either by passing api_key to the client or by setting the OPENAI_API_KEY environment variable"
+            ],
+            "priority": 5,
+            "passes": true,
+            "notes": "Removed unused ChatOpenAI imports that triggered API key validation at import time"
         }
     ]
 }

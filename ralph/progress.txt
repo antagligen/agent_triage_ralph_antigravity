@@ -40,3 +40,14 @@
   - Using `res.status.value` to compare enum values in Python when parsing status.
   - LLM structured output may not populate all fields; need to set `failed_agents` manually after LLM call.
 ---
+
+## 2026-01-20 - US-005
+- Investigated OpenAI API key error occurring at import time.
+- Root cause: Unused `ChatOpenAI` imports in `orchestrator.py`, `aci.py`, `infoblox.py`, and `palo_alto.py` triggered langchain-openai validation at import time.
+- Removed unused imports from all 4 files.
+- Verified typecheck passes (14 source files, no issues).
+- Verified end-to-end workflow in browser - Triage Report displayed correctly.
+- **Learnings:**
+  - `langchain-openai` validates `OPENAI_API_KEY` at import time, even if the class is never instantiated.
+  - Always clean up unused imports to avoid unintended side effects.
+---

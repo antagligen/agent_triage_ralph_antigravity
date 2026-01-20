@@ -1,7 +1,6 @@
 from typing import List, Annotated
 from langchain_core.tools import tool
 from langchain_core.messages import BaseMessage
-from langchain_openai import ChatOpenAI
 from langgraph.prebuilt import create_react_agent
 from ..config import AppConfig
 from ..llm_factory import get_llm
