@@ -28,3 +28,23 @@
   - Confirmed thought events display with correct format and icons
   - Triage Report renders properly after thoughts
 ---
+
+## 2026-01-20 23:55 - US-003: Add unit tests for streaming functionality
+- **What was implemented:**
+  - Added 9 comprehensive unit tests for `stream_graph_events()` function in `test_streaming.py`
+  - Created `MockWorkflow` class to simulate LangGraph events
+  - Tests cover: on_chain_start, on_tool_start, on_chain_end event filtering
+  - Tests verify: SSE format, skipping non-target events, skipping events without node context
+  - Tests verify: triage_report emission, routing event emission, full workflow simulation
+  - Added `asyncio_mode = auto` to pytest.ini for async test support
+- **Files changed:**
+  - `backend/tests/test_streaming.py` - Added 9 new unit tests for event filtering
+  - `pytest.ini` - Added asyncio_mode = auto
+- **Learnings:**
+  - pytest-asyncio requires `asyncio_mode = auto` in pytest.ini for async tests
+  - MockWorkflow pattern effective for testing async generators
+  - Testing SSE format requires parsing event/data lines from output string
+- **Verification:**
+  - All 49 tests pass
+  - mypy shows no type issues
+---

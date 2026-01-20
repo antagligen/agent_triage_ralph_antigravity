@@ -43,8 +43,8 @@
                 "Typecheck passes"
             ],
             "priority": 3,
-            "passes": false,
-            "notes": ""
+            "passes": true,
+            "notes": "Added 9 unit tests covering: chain_start/tool_start/chain_end filtering, skip non-target events, triage_report emission, routing event, full workflow simulation."
         }
     ]
 }
