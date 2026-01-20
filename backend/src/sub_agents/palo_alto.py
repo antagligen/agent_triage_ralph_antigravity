@@ -35,12 +35,14 @@ def get_palo_alto_agent_node(config: AppConfig):
             summary = last_msg.content if hasattr(last_msg, "content") else str(last_msg)
             
             return SubAgentResult(
+                agent_name="palo_alto",
                 raw_data={"messages": [m.content for m in result["messages"]]},
                 summary=str(summary),
                 status=AgentStatus.SUCCESS
             )
         except Exception as e:
             return SubAgentResult(
+                agent_name="palo_alto",
                 raw_data={"error": str(e)},
                 summary=f"Error executing Palo Alto agent: {str(e)}",
                 status=AgentStatus.FAILURE
