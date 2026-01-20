@@ -45,3 +45,35 @@
 - **Learnings:**
   - create_react_agent accepts state_modifier for system prompts
 ---
+
+## 2026-01-20T21:26 - US-005 Update Triage Agent with Configurable Prompt
+- Updated `backend/src/sub_agents/triage.py` to use `load_system_prompt('triage')`
+- Replaced hardcoded prompt with file-based loading
+- Validated with mypy
+- Files changed: `backend/src/sub_agents/triage.py`
+- **Learnings:**
+  - Triage agent uses `llm.with_structured_output`, but the system prompt is passed via `SystemMessage` in the invoke call, not via agent state modifier like the other agents.
+---
+
+## 2026-01-20T21:30 - US-006 Add Unit Tests for Prompt Loading
+- Created `backend/tests/test_config.py`
+- Implemented unit tests for `load_system_prompt`
+- Verified tests pass with `pytest`
+- Files changed: `backend/tests/test_config.py`
+- **Learnings:**
+  - Need to ensure `PYTHONPATH` includes `backend` when running tests from root.
+  - `pathlib.Path.read_text` should be mocked directly instead of `builtins.open` when used.
+---
+
+
+
+## 2026-01-20T21:26 - US-007 Update backend/readme
+- Updated `backend/README.md` to document Configurable System Prompts feature.
+- Added details on directory structure (`backend/system_prompts/`), editing instructions, and fallback mechanism.
+- Clarified hot-reload behavior for Orchestrator/Triage vs restart requirement for sub-agents.
+- Files changed: `backend/README.md`
+- **Learnings:**
+  - Confirmed Orchestrator and Triage reload prompts on every request (hot-reload).
+  - Confirmed sub-agents (ACI, Infoblox, Palo Alto) load prompts only on startup (cold-load).
+  - This distinction is critical for developers iterating on prompts.
+---
