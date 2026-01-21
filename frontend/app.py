@@ -20,6 +20,14 @@ st.title("🤖 Ralph - AI Troubleshooting Agent")
 if "messages" not in st.session_state:
     st.session_state.messages = []
 
+# Tab state for sub-agents: {agent_name: {created: bool, logs: list, status: str, has_new_activity: bool}}
+if "agent_tabs" not in st.session_state:
+    st.session_state.agent_tabs = {}
+
+# Track order of tab creation for consistent display
+if "tab_order" not in st.session_state:
+    st.session_state.tab_order = []
+
 # --- Helper Functions ---
 def check_backend_health():
     """Checks if the backend is reachable."""
@@ -68,14 +76,41 @@ with st.sidebar:
 
     if st.button("Clear History"):
         st.session_state.messages = []
+        st.session_state.agent_tabs = {}
+        st.session_state.tab_order = []
         st.rerun()
 
-# --- Display Chat History ---
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-        # If we saved thoughts, we could display them here too,
-        # but for now let's focus on the conversation flow.
+# --- Tab Container ---
+# Build tab labels: Orchestrator first, then sub-agents in order of first call
+tab_labels = ["Orchestrator"] + st.session_state.tab_order
+tabs = st.tabs(tab_labels)
+
+# --- Orchestrator Tab (Main Chat) ---
+with tabs[0]:
+    # Display Chat History
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+# --- Sub-Agent Tabs ---
+for i, agent_name in enumerate(st.session_state.tab_order):
+    with tabs[i + 1]:
+        agent_state = st.session_state.agent_tabs.get(agent_name, {})
+        logs = agent_state.get("logs", [])
+        status = agent_state.get("status", "idle")
+
+        # Show status indicator
+        if status == "running":
+            st.info(f"🔄 {agent_name} is processing...")
+        elif status == "complete":
+            st.success(f"✅ {agent_name} completed")
+
+        # Display logs
+        if logs:
+            for log in logs:
+                st.markdown(log)
+        else:
+            st.caption("No activity yet.")
 
 # --- Chat Input & Streaming Logic ---
 if prompt := st.chat_input("How can I help you troubleshoot?"):
@@ -128,13 +163,42 @@ if prompt := st.chat_input("How can I help you troubleshoot?"):
                                     status = data.get("status", "")
                                     message = data.get("message", "")
 
-                                    # Format status indicator
-                                    status_icon = "🔄" if status == "chain_start" else "🔧" if status == "tool_start" else "✅" if status == "chain_end" else "💭"
+                                    # Check if this is a sub-agent (not orchestrator)
+                                    is_subagent = node.lower() != "orchestrator" and node != "Unknown"
 
-                                    # Append to the thought log
-                                    new_thought = f"{status_icon} **[{node}]**: {message}\n\n"
-                                    thought_text += new_thought
-                                    thought_expander.markdown(thought_text)
+                                    if is_subagent:
+                                        # Create tab for new sub-agent on first call
+                                        if node not in st.session_state.agent_tabs:
+                                            st.session_state.agent_tabs[node] = {
+                                                "created": True,
+                                                "logs": [],
+                                                "status": "running",
+                                                "has_new_activity": True
+                                            }
+                                            st.session_state.tab_order.append(node)
+
+                                        # Update sub-agent status
+                                        if status == "chain_start":
+                                            st.session_state.agent_tabs[node]["status"] = "running"
+                                            # Show minimal status in orchestrator thinking expander
+                                            thought_text += f"🔄 **CALLING SUB-AGENT: {node}**\n\n"
+                                            thought_expander.markdown(thought_text)
+                                        elif status == "chain_end":
+                                            st.session_state.agent_tabs[node]["status"] = "complete"
+                                            thought_text += f"✅ **{node} Complete**\n\n"
+                                            thought_expander.markdown(thought_text)
+
+                                        # Route event to sub-agent's log
+                                        status_icon = "🔄" if status == "chain_start" else "🔧" if status == "tool_start" else "✅" if status == "chain_end" else "💭"
+                                        log_entry = f"{status_icon} **[{status}]**: {message}"
+                                        st.session_state.agent_tabs[node]["logs"].append(log_entry)
+                                        st.session_state.agent_tabs[node]["has_new_activity"] = True
+                                    else:
+                                        # Orchestrator events go to the thinking expander
+                                        status_icon = "🔄" if status == "chain_start" else "🔧" if status == "tool_start" else "✅" if status == "chain_end" else "💭"
+                                        new_thought = f"{status_icon} **[{node}]**: {message}\n\n"
+                                        thought_text += new_thought
+                                        thought_expander.markdown(thought_text)
 
                                 elif event_type == "routing":
                                     # Handle routing events
