@@ -22,3 +22,24 @@
   - Streamlit tabs must be created before the streaming loop
   - Tab order tracked separately from tab state for consistent display
 ---
+
+## 2026-01-21 19:15 - US-003, US-004, US-006: Sub-Agent Tabs & Status
+- Implemented dynamic sub-agent tab creation ('st.tabs' updates on 'rerun').
+- Added status display in Orchestrator tab ('CALLING SUB-AGENT: ...').
+- Verified tabs clear on 'Clear History'.
+- Implemented 'st.rerun()' logic to force UI update when new sub-agents are detected in the stream.
+- **Learnings:**
+  - **Port Conflict**: Local Streamlit development on port 8501 conflicted with a running Docker container. Workaround: Run on port 8502.
+  - **Dynamic Streamlit Tabs**: 'st.tabs()' must be defined at the start. To add tabs dynamically during a streaming interaction, you must update the session state and trigger 'st.rerun()' so the script re-executes.
+---
+
+
+## 2026-01-21 19:22 - US-005: Route thought events to correct tab
+- Implemented timestamp extraction and display in frontend/app.py.
+- Formatted timestamps as HH:MM:SS in sub-agent logs.
+- Verified backend streaming.py already emits ISO timestamps.
+- Refined log entry formatting to include timestamps.
+- **Learnings:**
+  - datetime.fromisoformat handles ISO strings well, but manual Z replacement helps with older Python versions or specific formats.
+  - Browser verification can be flaky if backend/LLM services are unstable (500 errors).
+---

@@ -46,8 +46,8 @@
                 "Verify in browser"
             ],
             "priority": 3,
-            "passes": false,
-            "notes": ""
+            "passes": true,
+            "notes": "Tabs created dynamically. Added st.rerun() to force update on creation."
         },
         {
             "id": "US-004",
@@ -61,8 +61,8 @@
                 "Verify in browser"
             ],
             "priority": 4,
-            "passes": false,
-            "notes": ""
+            "passes": true,
+            "notes": "Implemented and verified. Uses display names."
         },
         {
             "id": "US-005",
@@ -78,8 +78,8 @@
                 "Verify in browser"
             ],
             "priority": 5,
-            "passes": false,
-            "notes": ""
+            "passes": true,
+            "notes": "Routing implemented. Timestamps added and formatted."
         },
         {
             "id": "US-006",
@@ -93,8 +93,8 @@
                 "Verify in browser"
             ],
             "priority": 6,
-            "passes": false,
-            "notes": ""
+            "passes": true,
+            "notes": "Verified clear history resets tab state."
         },
         {
             "id": "US-007",

@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import json
 import os
+from datetime import datetime
 
 # --- Configuration ---
 BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
@@ -27,6 +28,19 @@ if "agent_tabs" not in st.session_state:
 # Track order of tab creation for consistent display
 if "tab_order" not in st.session_state:
     st.session_state.tab_order = []
+
+# Display name mapping for sub-agent tabs (raw node name -> display label)
+AGENT_DISPLAY_NAMES: dict[str, str] = {
+    "aci": "ACI",
+    "infoblox": "Infoblox",
+    "palo_alto": "Palo Alto",
+    "triage": "Triage",
+}
+
+
+def get_agent_display_name(node_name: str) -> str:
+    """Convert raw node name to properly formatted display label."""
+    return AGENT_DISPLAY_NAMES.get(node_name.lower(), node_name.title())
 
 # --- Helper Functions ---
 def check_backend_health():
@@ -82,7 +96,7 @@ with st.sidebar:
 
 # --- Tab Container ---
 # Build tab labels: Orchestrator first, then sub-agents in order of first call
-tab_labels = ["Orchestrator"] + st.session_state.tab_order
+tab_labels = ["Orchestrator"] + [get_agent_display_name(name) for name in st.session_state.tab_order]
 tabs = st.tabs(tab_labels)
 
 # --- Orchestrator Tab (Main Chat) ---
@@ -98,12 +112,13 @@ for i, agent_name in enumerate(st.session_state.tab_order):
         agent_state = st.session_state.agent_tabs.get(agent_name, {})
         logs = agent_state.get("logs", [])
         status = agent_state.get("status", "idle")
+        display_name = get_agent_display_name(agent_name)
 
         # Show status indicator
         if status == "running":
-            st.info(f"🔄 {agent_name} is processing...")
+            st.info(f"🔄 {display_name} is processing...")
         elif status == "complete":
-            st.success(f"✅ {agent_name} completed")
+            st.success(f"✅ {display_name} completed")
 
         # Display logs
         if logs:
@@ -179,21 +194,39 @@ if prompt := st.chat_input("How can I help you troubleshoot?"):
                                             # Prevent duplicate entries in tab_order
                                             if node not in st.session_state.tab_order:
                                                 st.session_state.tab_order.append(node)
+                                                st.session_state.new_tab_created = True
 
                                         # Update sub-agent status
                                         if status == "chain_start":
                                             st.session_state.agent_tabs[node]["status"] = "running"
                                             # Show minimal status in orchestrator thinking expander
-                                            thought_text += f"🔄 **CALLING SUB-AGENT: {node}**\n\n"
+                                            display_name = get_agent_display_name(node)
+                                            thought_text += f"🔄 **CALLING SUB-AGENT: {display_name}**\n\n"
                                             thought_expander.markdown(thought_text)
                                         elif status == "chain_end":
                                             st.session_state.agent_tabs[node]["status"] = "complete"
-                                            thought_text += f"✅ **{node} Complete**\n\n"
+                                            display_name = get_agent_display_name(node)
+                                            thought_text += f"✅ **{display_name} Complete**\n\n"
                                             thought_expander.markdown(thought_text)
 
                                         # Route event to sub-agent's log
+                                        timestamp_str = data.get("timestamp", "")
+                                        formatted_time = ""
+                                        if timestamp_str:
+                                            try:
+                                                # Handle ISO format with potential Z or offset
+                                                dt = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
+                                                formatted_time = dt.strftime("%H:%M:%S")
+                                            except ValueError:
+                                                formatted_time = ""
+
                                         status_icon = "🔄" if status == "chain_start" else "🔧" if status == "tool_start" else "✅" if status == "chain_end" else "💭"
-                                        log_entry = f"{status_icon} **[{status}]**: {message}"
+                                        
+                                        if formatted_time:
+                                            log_entry = f"`{formatted_time}` {status_icon} **[{status}]**: {message}"
+                                        else:
+                                            log_entry = f"{status_icon} **[{status}]**: {message}"
+                                            
                                         st.session_state.agent_tabs[node]["logs"].append(log_entry)
                                         st.session_state.agent_tabs[node]["has_new_activity"] = True
                                     else:
@@ -254,6 +287,11 @@ if prompt := st.chat_input("How can I help you troubleshoot?"):
             # 5. Save valid response to history
             if full_response:
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
+
+            # Force a rerun if a new tab was created so it appears in the UI
+            if st.session_state.get("new_tab_created", False):
+                st.session_state.new_tab_created = False
+                st.rerun()
 
         except Exception as e:
             st.error(f"Connection failed: {e}")
