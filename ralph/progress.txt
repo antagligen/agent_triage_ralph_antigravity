@@ -43,3 +43,12 @@
   - datetime.fromisoformat handles ISO strings well, but manual Z replacement helps with older Python versions or specific formats.
   - Browser verification can be flaky if backend/LLM services are unstable (500 errors).
 ---
+
+## 2026-01-21 19:44 - US-007: Activity Indicator & Mark Read
+- Implemented green dot  indicator on tabs with new activity.
+- Added 'Mark Read' button inside sub-agent tabs to clear the indicator.
+- Changed default Model Provider to 'Gemini' in frontend to handle missing OpenAI key.
+- **Learnings:**
+  - Streamlit does not expose active tab state easily, so a 'Mark Read' button is a necessary workaround.
+  - Backend crashes if OpenAI key is missing but 'OpenAI' provider is requested. Defaults matter.
+---

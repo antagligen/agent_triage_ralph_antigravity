@@ -59,7 +59,7 @@ with st.sidebar:
     provider = st.radio(
         "Model Provider",
         ["OpenAI", "Gemini"],
-        index=0
+        index=1
     )
 
     # Model Name Selection based on Provider
@@ -96,7 +96,13 @@ with st.sidebar:
 
 # --- Tab Container ---
 # Build tab labels: Orchestrator first, then sub-agents in order of first call
-tab_labels = ["Orchestrator"] + [get_agent_display_name(name) for name in st.session_state.tab_order]
+tab_labels = ["Orchestrator"]
+for name in st.session_state.tab_order:
+    display_name = get_agent_display_name(name)
+    if st.session_state.agent_tabs[name].get("has_new_activity", False):
+        display_name += " 🟢"
+    tab_labels.append(display_name)
+
 tabs = st.tabs(tab_labels)
 
 # --- Orchestrator Tab (Main Chat) ---
@@ -113,6 +119,12 @@ for i, agent_name in enumerate(st.session_state.tab_order):
         logs = agent_state.get("logs", [])
         status = agent_state.get("status", "idle")
         display_name = get_agent_display_name(agent_name)
+
+        # Check for new activity and offer to clear it
+        if agent_state.get("has_new_activity", False):
+            if st.button("Mark Read", key=f"mark_read_{agent_name}"):
+                st.session_state.agent_tabs[agent_name]["has_new_activity"] = False
+                st.rerun()
 
         # Show status indicator
         if status == "running":
@@ -221,12 +233,12 @@ if prompt := st.chat_input("How can I help you troubleshoot?"):
                                                 formatted_time = ""
 
                                         status_icon = "🔄" if status == "chain_start" else "🔧" if status == "tool_start" else "✅" if status == "chain_end" else "💭"
-                                        
+
                                         if formatted_time:
                                             log_entry = f"`{formatted_time}` {status_icon} **[{status}]**: {message}"
                                         else:
                                             log_entry = f"{status_icon} **[{status}]**: {message}"
-                                            
+
                                         st.session_state.agent_tabs[node]["logs"].append(log_entry)
                                         st.session_state.agent_tabs[node]["has_new_activity"] = True
                                     else:

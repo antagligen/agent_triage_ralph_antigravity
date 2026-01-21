@@ -109,8 +109,8 @@
                 "Verify in browser"
             ],
             "priority": 7,
-            "passes": false,
-            "notes": ""
+            "passes": true,
+            "notes": "Implemented with 'Mark Read' button workaround for Streamlit limitation."
         },
         {
             "id": "US-008",
