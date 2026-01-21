@@ -2,6 +2,7 @@ import streamlit as st
 import requests
 import json
 import os
+import logic
 from datetime import datetime
 
 # --- Configuration ---
@@ -29,29 +30,11 @@ load_css()
 st.title("🤖 Ralph - AI Troubleshooting Agent")
 
 # --- Session State Initialization ---
-if "messages" not in st.session_state:
-    st.session_state.messages = []
-
-# Tab state for sub-agents: {agent_name: {created: bool, logs: list, status: str, has_new_activity: bool}}
-if "agent_tabs" not in st.session_state:
-    st.session_state.agent_tabs = {}
-
-# Track order of tab creation for consistent display
-if "tab_order" not in st.session_state:
-    st.session_state.tab_order = []
-
-# Display name mapping for sub-agent tabs (raw node name -> display label)
-AGENT_DISPLAY_NAMES: dict[str, str] = {
-    "aci": "ACI",
-    "infoblox": "Infoblox",
-    "palo_alto": "Palo Alto",
-    "triage": "Triage",
-}
-
+logic.initialize_session_state(st.session_state)
 
 def get_agent_display_name(node_name: str) -> str:
     """Convert raw node name to properly formatted display label."""
-    return AGENT_DISPLAY_NAMES.get(node_name.lower(), node_name.title())
+    return logic.get_agent_display_name(node_name)
 
 # --- Helper Functions ---
 def check_backend_health():
@@ -231,111 +214,30 @@ if prompt := st.chat_input("How can I help you troubleshoot?"):
                                 data = json.loads(data_str)
 
                                 if event_type == "thought":
-                                    # Handle internal thought events (standardized format)
-                                    node = data.get("node", "Unknown")
-                                    status = data.get("status", "")
-                                    message = data.get("message", "")
-
-                                    # Check if this is a sub-agent (not orchestrator)
-                                    is_subagent = node.lower() != "orchestrator" and node != "Unknown"
-
-                                    if is_subagent:
-                                        # Create tab for new sub-agent on first call
-                                        # Defensive check: handle rapid events that may race
-                                        if node not in st.session_state.agent_tabs:
-                                            st.session_state.agent_tabs[node] = {
-                                                "created": True,
-                                                "logs": [],
-                                                "status": "running",
-                                                "has_new_activity": True
-                                            }
-                                            # Prevent duplicate entries in tab_order
-                                            if node not in st.session_state.tab_order:
-                                                st.session_state.tab_order.append(node)
-                                                st.session_state.new_tab_created = True
-
-                                        # Update sub-agent status
-                                        if status == "chain_start":
-                                            st.session_state.agent_tabs[node]["status"] = "running"
-                                            # Show minimal status in orchestrator thinking expander
-                                            display_name = get_agent_display_name(node)
-                                            thought_text += f"🔄 **CALLING SUB-AGENT: {display_name}**\n\n"
-                                            thought_expander.markdown(thought_text)
-                                        elif status == "chain_end":
-                                            st.session_state.agent_tabs[node]["status"] = "complete"
-                                            display_name = get_agent_display_name(node)
-                                            thought_text += f"✅ **{display_name} Complete**\n\n"
-                                            thought_expander.markdown(thought_text)
-
-                                        # Route event to sub-agent's log
-                                        timestamp_str = data.get("timestamp", "")
-                                        formatted_time = ""
-                                        if timestamp_str:
-                                            try:
-                                                # Handle ISO format with potential Z or offset
-                                                dt = datetime.fromisoformat(timestamp_str.replace("Z", "+00:00"))
-                                                formatted_time = dt.strftime("%H:%M:%S")
-                                            except ValueError:
-                                                formatted_time = ""
-
-                                        status_icon = "🔄" if status == "chain_start" else "🔧" if status == "tool_start" else "✅" if status == "chain_end" else "💭"
-
-                                        # Store structured log entry
-                                        log_entry_data = {
-                                            "timestamp": formatted_time,
-                                            "status": status,
-                                            "icon": status_icon,
-                                            "message": message
-                                        }
-
-                                        st.session_state.agent_tabs[node]["logs"].append(log_entry_data)
-                                        st.session_state.agent_tabs[node]["has_new_activity"] = True
-                                    else:
-                                        # Orchestrator events go to the thinking expander
-                                        status_icon = "🔄" if status == "chain_start" else "🔧" if status == "tool_start" else "✅" if status == "chain_end" else "💭"
-                                        new_thought = f"{status_icon} **[{node}]**: {message}\n\n"
-                                        thought_text += new_thought
+                                    # Handle thought event via logic module
+                                    delta = logic.handle_thought_event(data, st.session_state)
+                                    if delta:
+                                        thought_text += delta
                                         thought_expander.markdown(thought_text)
 
+                                    # Check if we need to rerun (new tab created)
+                                    if st.session_state.get("new_tab_created", False):
+                                        # We defer the rerun until the end of the loop or handle it immediately?
+                                        # In the previous code it set a flag.
+                                        # logic.handle_thought_event sets st.session_state["new_tab_created"] = True
+                                        pass
+
                                 elif event_type == "routing":
-                                    # Handle routing events
-                                    next_node = data.get("routing", "")
-                                    thought_text += f"*Routing to: `{next_node}`*\n\n"
+                                    # Handle routing event
+                                    delta = logic.handle_routing_event(data)
+                                    thought_text += delta
                                     thought_expander.markdown(thought_text)
 
                                 elif event_type == "triage_report":
                                     # Handle Triage Report
-                                    root_cause = data.get("root_cause", "Unknown")
-                                    action = data.get("action", "No action specified")
-                                    details = data.get("details", "")
-
-                                    # Format the report
-                                    report_md = f"""
-                                    ### 🚨 Triage Report
-                                    **Root Cause:** {root_cause}
-
-                                    **Action:** {action}
-
-                                    **Details:** {details}
-                                    """
-                                    full_response += report_md
+                                    delta = logic.handle_triage_report(data)
+                                    full_response += delta
                                     message_placeholder.markdown(full_response)
-
-                                # We treat the actual message content as part of the thought stream
-                                # if it comes from nodes, but usually the 'final' response
-                                # comes differently or is just the accumulation of text.
-                                # Based on current backend implementation, 'thought' events
-                                # contain the content.
-                                # Let's assume for now that if node is 'orchestrator'
-                                # and it's sending content, it might be the final answer?
-                                # Actually the backend streams EVERYTHING as thoughts currently.
-                                # We need to decide what constitutes the "Final Answer".
-                                # For this pass, we'll append everything to full_response
-                                # AND show it in thoughts.
-
-                                # Note: The new standardized format uses `message` field for
-                                # thought events, not `content`. The `triage_report` event
-                                # handles the final response display.
 
                             except json.JSONDecodeError:
                                 pass # formatting error or keepalive
