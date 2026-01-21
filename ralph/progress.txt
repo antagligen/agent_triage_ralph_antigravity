@@ -62,3 +62,15 @@
   - Streamlit's `st.markdown` with `unsafe_allow_html=True` allows for significant UI customization (scrollable containers, CSS animations).
   - Robust file path handling (`os.path.join(os.path.dirname...)`) is crucial when referencing external assets like CSS in Streamlit apps.
 ---
+
+## 2026-01-21 20:35 - US-009: Add Unit Tests for Tab Logic
+- Refactored `frontend/app.py` logic into `frontend/logic.py` for testability.
+- Created `frontend/tests/test_logic.py` covering:
+  - Tab usage and session state initialization.
+  - Event processing (thought events, routing, triage reports).
+  - Timestamp formatting and log entry structure.
+- Ensured 100% pass on new unit tests.
+- **Learnings:**
+  - Separating logic from Streamlit's UI rendering commands makes testing much easier (no need to mock st.session_state extensively).
+  - Explicit typing in tests is required for strict mypy checks.
+---
