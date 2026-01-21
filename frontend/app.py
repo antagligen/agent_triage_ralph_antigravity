@@ -2,6 +2,8 @@ import streamlit as st
 import requests
 import json
 import os
+import logic
+from datetime import datetime
 
 # --- Configuration ---
 BACKEND_URL = os.getenv("BACKEND_URL", "http://localhost:8000")
@@ -14,11 +16,25 @@ st.set_page_config(
     layout="wide"
 )
 
+# --- Load Custom CSS ---
+def load_css():
+    css_path = os.path.join(os.path.dirname(__file__), "style.css")
+    try:
+        with open(css_path) as f:
+            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    except FileNotFoundError:
+        st.warning(f"style.css not found at {css_path}")
+
+load_css()
+
 st.title("🤖 Ralph - AI Troubleshooting Agent")
 
 # --- Session State Initialization ---
-if "messages" not in st.session_state:
-    st.session_state.messages = []
+logic.initialize_session_state(st.session_state)
+
+def get_agent_display_name(node_name: str) -> str:
+    """Convert raw node name to properly formatted display label."""
+    return logic.get_agent_display_name(node_name)
 
 # --- Helper Functions ---
 def check_backend_health():
@@ -37,7 +53,7 @@ with st.sidebar:
     provider = st.radio(
         "Model Provider",
         ["OpenAI", "Gemini"],
-        index=0
+        index=1
     )
 
     # Model Name Selection based on Provider
@@ -68,14 +84,89 @@ with st.sidebar:
 
     if st.button("Clear History"):
         st.session_state.messages = []
+        st.session_state.agent_tabs = {}
+        st.session_state.tab_order = []
         st.rerun()
 
-# --- Display Chat History ---
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-        # If we saved thoughts, we could display them here too,
-        # but for now let's focus on the conversation flow.
+# --- Tab Container ---
+# Build tab labels: Orchestrator first, then sub-agents in order of first call
+tab_labels = ["Orchestrator"]
+for name in st.session_state.tab_order:
+    display_name = get_agent_display_name(name)
+    if st.session_state.agent_tabs[name].get("has_new_activity", False):
+        display_name += " 🟢"
+    tab_labels.append(display_name)
+
+tabs = st.tabs(tab_labels)
+
+# --- Orchestrator Tab (Main Chat) ---
+with tabs[0]:
+    # Display Chat History
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+# --- Sub-Agent Tabs ---
+for i, agent_name in enumerate(st.session_state.tab_order):
+    with tabs[i + 1]:
+        agent_state = st.session_state.agent_tabs.get(agent_name, {})
+        logs = agent_state.get("logs", [])
+        status = agent_state.get("status", "idle")
+        display_name = get_agent_display_name(agent_name)
+
+        # Check for new activity and offer to clear it
+        if agent_state.get("has_new_activity", False):
+            if st.button("Mark Read", key=f"mark_read_{agent_name}"):
+                st.session_state.agent_tabs[agent_name]["has_new_activity"] = False
+                st.rerun()
+
+        # Show status indicator
+        if status == "running":
+            st.markdown(f"""
+                <div class="agent-status-running">
+                    <div class="agent-spinner"></div>
+                    {display_name} is processing...
+                </div>
+            """, unsafe_allow_html=True)
+        elif status == "complete":
+             st.markdown(f"""
+                <div class="agent-status-complete">
+                    ✅ {display_name} completed
+                </div>
+            """, unsafe_allow_html=True)
+
+        # Display logs
+        if logs:
+            logs_html = ""
+            for log in logs:
+                # Handle legacy string logs if any (defensive)
+                if isinstance(log, str):
+                    logs_html += f'<div class="log-entry">{log}</div>'
+                else:
+                    # Map status to CSS class
+                    status_slug = log.get('status', 'thought').lower()
+                    status_class = f"log-type-{status_slug}"
+
+                    timestamp_html = f'<span class="log-timestamp">{log["timestamp"]}</span>' if log.get("timestamp") else ''
+
+                    logs_html += f"""
+                    <div class="log-entry {status_class}">
+                        {timestamp_html}
+                        <span class="log-icon">{log["icon"]}</span>
+                        <span class="log-message">{log["message"]}</span>
+                    </div>
+                    """
+
+            st.markdown(f"""
+            <div class="agent-log-wrapper">
+                <div class="agent-log-header">Activity Log</div>
+                <div class="agent-log-container">
+                    {logs_html}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.caption("No activity yet.")
 
 # --- Chat Input & Streaming Logic ---
 if prompt := st.chat_input("How can I help you troubleshoot?"):
@@ -123,58 +214,30 @@ if prompt := st.chat_input("How can I help you troubleshoot?"):
                                 data = json.loads(data_str)
 
                                 if event_type == "thought":
-                                    # Handle internal thought events (standardized format)
-                                    node = data.get("node", "Unknown")
-                                    status = data.get("status", "")
-                                    message = data.get("message", "")
+                                    # Handle thought event via logic module
+                                    delta = logic.handle_thought_event(data, st.session_state)
+                                    if delta:
+                                        thought_text += delta
+                                        thought_expander.markdown(thought_text)
 
-                                    # Format status indicator
-                                    status_icon = "🔄" if status == "chain_start" else "🔧" if status == "tool_start" else "✅" if status == "chain_end" else "💭"
-
-                                    # Append to the thought log
-                                    new_thought = f"{status_icon} **[{node}]**: {message}\n\n"
-                                    thought_text += new_thought
-                                    thought_expander.markdown(thought_text)
+                                    # Check if we need to rerun (new tab created)
+                                    if st.session_state.get("new_tab_created", False):
+                                        # We defer the rerun until the end of the loop or handle it immediately?
+                                        # In the previous code it set a flag.
+                                        # logic.handle_thought_event sets st.session_state["new_tab_created"] = True
+                                        pass
 
                                 elif event_type == "routing":
-                                    # Handle routing events
-                                    next_node = data.get("routing", "")
-                                    thought_text += f"*Routing to: `{next_node}`*\n\n"
+                                    # Handle routing event
+                                    delta = logic.handle_routing_event(data)
+                                    thought_text += delta
                                     thought_expander.markdown(thought_text)
 
                                 elif event_type == "triage_report":
                                     # Handle Triage Report
-                                    root_cause = data.get("root_cause", "Unknown")
-                                    action = data.get("action", "No action specified")
-                                    details = data.get("details", "")
-
-                                    # Format the report
-                                    report_md = f"""
-                                    ### 🚨 Triage Report
-                                    **Root Cause:** {root_cause}
-
-                                    **Action:** {action}
-
-                                    **Details:** {details}
-                                    """
-                                    full_response += report_md
+                                    delta = logic.handle_triage_report(data)
+                                    full_response += delta
                                     message_placeholder.markdown(full_response)
-
-                                # We treat the actual message content as part of the thought stream
-                                # if it comes from nodes, but usually the 'final' response
-                                # comes differently or is just the accumulation of text.
-                                # Based on current backend implementation, 'thought' events
-                                # contain the content.
-                                # Let's assume for now that if node is 'orchestrator'
-                                # and it's sending content, it might be the final answer?
-                                # Actually the backend streams EVERYTHING as thoughts currently.
-                                # We need to decide what constitutes the "Final Answer".
-                                # For this pass, we'll append everything to full_response
-                                # AND show it in thoughts.
-
-                                # Note: The new standardized format uses `message` field for
-                                # thought events, not `content`. The `triage_report` event
-                                # handles the final response display.
 
                             except json.JSONDecodeError:
                                 pass # formatting error or keepalive
@@ -187,6 +250,11 @@ if prompt := st.chat_input("How can I help you troubleshoot?"):
             # 5. Save valid response to history
             if full_response:
                 st.session_state.messages.append({"role": "assistant", "content": full_response})
+
+            # Force a rerun if a new tab was created so it appears in the UI
+            if st.session_state.get("new_tab_created", False):
+                st.session_state.new_tab_created = False
+                st.rerun()
 
         except Exception as e:
             st.error(f"Connection failed: {e}")

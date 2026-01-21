@@ -1,50 +1,289 @@
 {
-    "project": "Sub-Agent Thought Streaming",
-    "branchName": "ralph/subagent-streaming",
-    "description": "Stream sub-agent lifecycle events and tool executions to the frontend to improve transparency and user experience. Users should see real-time status updates like 'Checking Infoblox...' and 'Calling tool X'.",
+    "project": "Sub-Agent Tabbed Interface",
+    "branchName": "ralph/subagent-tabs",
+    "description": "Refactor frontend to display sub-agent activity in dedicated tabs instead of bloating the orchestrator chat window. Each sub-agent gets its own tab with full detail while the orchestrator shows only call/completion status.",
     "userStories": [
         {
             "id": "US-001",
-            "title": "Update streaming.py to use astream_events",
-            "description": "As a developer, I want the backend to capture internal sub-agent events so the frontend can display progress.",
+            "title": "Add tab container component",
+            "description": "As a user, I want a tab container in the UI so I can switch between the orchestrator and individual sub-agent views.",
             "acceptanceCriteria": [
-                "Replace `workflow.astream()` with `workflow.astream_events()` in `backend/src/streaming.py`",
-                "Filter events to capture: on_chain_start (entering sub-agent), on_tool_start (tool being called), on_chain_end (sub-agent finishing)",
-                "Ensure filtered events include agent name and relevant context",
-                "Typecheck passes"
+                "Add a tab container using Streamlit's `st.tabs()` component",
+                "Default tab is 'Orchestrator' showing the main chat",
+                "Tabs are created dynamically when sub-agents are called",
+                "Tab order: Orchestrator, then sub-agents in order of first call",
+                "Typecheck passes",
+                "Verify in browser"
             ],
             "priority": 1,
             "passes": true,
-            "notes": ""
+            "notes": "Implemented with st.tabs(), dynamic tab creation, and event routing"
         },
         {
             "id": "US-002",
-            "title": "Standardize SSE event format for sub-agent thoughts",
-            "description": "As a frontend developer, I need a consistent JSON structure for thought events to render them correctly.",
+            "title": "Update session state for tabs",
+            "description": "As a developer, I need proper session state management for the tabbed architecture.",
             "acceptanceCriteria": [
-                "Define JSON schema: {node: string, status: 'chain_start'|'tool_start'|'chain_end', message: string, timestamp: string}",
-                "Update `backend/src/streaming.py` to emit `event: thought` with this schema for sub-agent events",
-                "Verify events are emitted using curl or browser DevTools (check Network tab for SSE stream)",
+                "Add `st.session_state.agent_tabs` dict to track: `{agent_name: {created: bool, logs: list, status: str, has_new_activity: bool}}`",
+                "Ensure state persists correctly during Streamlit reruns",
+                "Handle edge cases (rapid events, missing agents)",
                 "Typecheck passes"
             ],
             "priority": 2,
             "passes": true,
-            "notes": "Verified 2026-01-20: Thought events emit with standardized schema. Frontend updated to display status icons."
+            "notes": "Session state already implemented in US-001. Added defensive check for duplicate tab_order entries."
         },
         {
             "id": "US-003",
-            "title": "Add unit tests for streaming functionality",
-            "description": "As a developer, I want tests that verify the streaming logic emits the correct events.",
+            "title": "Create sub-agent tab on first call",
+            "description": "As a user, I want a new tab created automatically when a sub-agent is first called.",
             "acceptanceCriteria": [
-                "Add test in `backend/tests/test_streaming.py` to verify event filtering logic",
-                "Mock LangGraph astream_events to simulate on_chain_start, on_tool_start, on_chain_end",
-                "Assert correct SSE format is emitted for each event type",
-                "All tests pass",
-                "Typecheck passes"
+                "When `chain_start` event received for a new node, create a tab for it",
+                "Tab label shows agent name (e.g., 'ACI', 'Infoblox', 'Palo Alto', 'Triage')",
+                "Skip creating tabs for the orchestrator node itself",
+                "Session state tracks which tabs have been created",
+                "Typecheck passes",
+                "Verify in browser"
             ],
             "priority": 3,
             "passes": true,
-            "notes": "Added 9 unit tests covering: chain_start/tool_start/chain_end filtering, skip non-target events, triage_report emission, routing event, full workflow simulation."
+            "notes": "Tabs created dynamically. Added st.rerun() to force update on creation."
+        },
+        {
+            "id": "US-004",
+            "title": "Display sub-agent call status in orchestrator",
+            "description": "As a user, I want the orchestrator view to show minimal status when sub-agents are called.",
+            "acceptanceCriteria": [
+                "On `chain_start` for sub-agent: display '🔄 CALLING SUB-AGENT: {name}'",
+                "On `chain_end` for sub-agent: update to '✅ {name} Complete'",
+                "Status updates appear inline in the thinking expander",
+                "Typecheck passes",
+                "Verify in browser"
+            ],
+            "priority": 4,
+            "passes": true,
+            "notes": "Implemented and verified. Uses display names."
+        },
+        {
+            "id": "US-005",
+            "title": "Route thought events to correct tab",
+            "description": "As a user, I want each sub-agent's thought events routed to its corresponding tab.",
+            "acceptanceCriteria": [
+                "Thought events (chain_start, tool_start, chain_end) for a sub-agent appear in its tab",
+                "Each tab maintains its own scrollable log",
+                "Events include status icons (🔄 start, 🔧 tool, ✅ end)",
+                "Events show timestamps",
+                "Tool events show tool name and input summary",
+                "Typecheck passes",
+                "Verify in browser"
+            ],
+            "priority": 5,
+            "passes": true,
+            "notes": "Routing implemented. Timestamps added and formatted."
+        },
+        {
+            "id": "US-006",
+            "title": "Clear tabs on new conversation",
+            "description": "As a user, I want tabs to be cleared when I start a new conversation.",
+            "acceptanceCriteria": [
+                "'Clear History' button also clears all sub-agent tabs",
+                "New conversation starts with only 'Orchestrator' tab visible",
+                "Session state for tabs is properly reset",
+                "Typecheck passes",
+                "Verify in browser"
+            ],
+            "priority": 6,
+            "passes": true,
+            "notes": "Verified clear history resets tab state."
+        },
+        {
+            "id": "US-007",
+            "title": "Add green dot indicator for new tab activity",
+            "description": "As a user, I want to see a visual indicator when a new tab appears or has activity.",
+            "acceptanceCriteria": [
+                "Green dot (🟢) shown on tab label when new activity occurs",
+                "Indicator clears when user clicks on the tab",
+                "Tabs do NOT auto-focus when activity occurs",
+                "Custom CSS for indicator styling",
+                "Typecheck passes",
+                "Verify in browser"
+            ],
+            "priority": 7,
+            "passes": true,
+            "notes": "Implemented with 'Mark Read' button workaround for Streamlit limitation."
+        },
+        {
+            "id": "US-008",
+            "title": "Add styling and animations",
+            "description": "As a user, I want the tab interface to look polished with modern styling.",
+            "acceptanceCriteria": [
+                "Custom CSS for tab styling (colors matching app theme)",
+                "Loading animation/spinner in tab when sub-agent is active",
+                "Smooth scroll for thought event logs",
+                "Responsive layout that works on different screen sizes",
+                "Typecheck passes",
+                "Verify in browser"
+            ],
+            "priority": 8,
+            "passes": true,
+            "notes": "Implemented with custom CSS, spinner animation, and structured HTML log rendering."
+        },
+        {
+            "id": "US-009",
+            "title": "Add unit tests for tab logic",
+            "description": "As a developer, I want tests that verify the tab creation and event routing logic.",
+            "acceptanceCriteria": [
+                "Test: tab created on first chain_start for new agent",
+                "Test: events routed to correct agent's log",
+                {
+                    "project": "Sub-Agent Tabbed Interface",
+                    "branchName": "ralph/subagent-tabs",
+                    "description": "Refactor frontend to display sub-agent activity in dedicated tabs instead of bloating the orchestrator chat window. Each sub-agent gets its own tab with full detail while the orchestrator shows only call/completion status.",
+                    "userStories": [
+                        {
+                            "id": "US-001",
+                            "title": "Add tab container component",
+                            "description": "As a user, I want a tab container in the UI so I can switch between the orchestrator and individual sub-agent views.",
+                            "acceptanceCriteria": [
+                                "Add a tab container using Streamlit's `st.tabs()` component",
+                                "Default tab is 'Orchestrator' showing the main chat",
+                                "Tabs are created dynamically when sub-agents are called",
+                                "Tab order: Orchestrator, then sub-agents in order of first call",
+                                "Typecheck passes",
+                                "Verify in browser"
+                            ],
+                            "priority": 1,
+                            "passes": true,
+                            "notes": "Implemented with st.tabs(), dynamic tab creation, and event routing"
+                        },
+                        {
+                            "id": "US-002",
+                            "title": "Update session state for tabs",
+                            "description": "As a developer, I need proper session state management for the tabbed architecture.",
+                            "acceptanceCriteria": [
+                                "Add `st.session_state.agent_tabs` dict to track: `{agent_name: {created: bool, logs: list, status: str, has_new_activity: bool}}`",
+                                "Ensure state persists correctly during Streamlit reruns",
+                                "Handle edge cases (rapid events, missing agents)",
+                                "Typecheck passes"
+                            ],
+                            "priority": 2,
+                            "passes": true,
+                            "notes": "Session state already implemented in US-001. Added defensive check for duplicate tab_order entries."
+                        },
+                        {
+                            "id": "US-003",
+                            "title": "Create sub-agent tab on first call",
+                            "description": "As a user, I want a new tab created automatically when a sub-agent is first called.",
+                            "acceptanceCriteria": [
+                                "When `chain_start` event received for a new node, create a tab for it",
+                                "Tab label shows agent name (e.g., 'ACI', 'Infoblox', 'Palo Alto', 'Triage')",
+                                "Skip creating tabs for the orchestrator node itself",
+                                "Session state tracks which tabs have been created",
+                                "Typecheck passes",
+                                "Verify in browser"
+                            ],
+                            "priority": 3,
+                            "passes": true,
+                            "notes": "Tabs created dynamically. Added st.rerun() to force update on creation."
+                        },
+                        {
+                            "id": "US-004",
+                            "title": "Display sub-agent call status in orchestrator",
+                            "description": "As a user, I want the orchestrator view to show minimal status when sub-agents are called.",
+                            "acceptanceCriteria": [
+                                "On `chain_start` for sub-agent: display '🔄 CALLING SUB-AGENT: {name}'",
+                                "On `chain_end` for sub-agent: update to '✅ {name} Complete'",
+                                "Status updates appear inline in the thinking expander",
+                                "Typecheck passes",
+                                "Verify in browser"
+                            ],
+                            "priority": 4,
+                            "passes": true,
+                            "notes": "Implemented and verified. Uses display names."
+                        },
+                        {
+                            "id": "US-005",
+                            "title": "Route thought events to correct tab",
+                            "description": "As a user, I want each sub-agent's thought events routed to its corresponding tab.",
+                            "acceptanceCriteria": [
+                                "Thought events (chain_start, tool_start, chain_end) for a sub-agent appear in its tab",
+                                "Each tab maintains its own scrollable log",
+                                "Events include status icons (🔄 start, 🔧 tool, ✅ end)",
+                                "Events show timestamps",
+                                "Tool events show tool name and input summary",
+                                "Typecheck passes",
+                                "Verify in browser"
+                            ],
+                            "priority": 5,
+                            "passes": true,
+                            "notes": "Routing implemented. Timestamps added and formatted."
+                        },
+                        {
+                            "id": "US-006",
+                            "title": "Clear tabs on new conversation",
+                            "description": "As a user, I want tabs to be cleared when I start a new conversation.",
+                            "acceptanceCriteria": [
+                                "'Clear History' button also clears all sub-agent tabs",
+                                "New conversation starts with only 'Orchestrator' tab visible",
+                                "Session state for tabs is properly reset",
+                                "Typecheck passes",
+                                "Verify in browser"
+                            ],
+                            "priority": 6,
+                            "passes": true,
+                            "notes": "Verified clear history resets tab state."
+                        },
+                        {
+                            "id": "US-007",
+                            "title": "Add green dot indicator for new tab activity",
+                            "description": "As a user, I want to see a visual indicator when a new tab appears or has activity.",
+                            "acceptanceCriteria": [
+                                "Green dot (🟢) shown on tab label when new activity occurs",
+                                "Indicator clears when user clicks on the tab",
+                                "Tabs do NOT auto-focus when activity occurs",
+                                "Custom CSS for indicator styling",
+                                "Typecheck passes",
+                                "Verify in browser"
+                            ],
+                            "priority": 7,
+                            "passes": true,
+                            "notes": "Implemented with 'Mark Read' button workaround for Streamlit limitation."
+                        },
+                        {
+                            "id": "US-008",
+                            "title": "Add styling and animations",
+                            "description": "As a user, I want the tab interface to look polished with modern styling.",
+                            "acceptanceCriteria": [
+                                "Custom CSS for tab styling (colors matching app theme)",
+                                "Loading animation/spinner in tab when sub-agent is active",
+                                "Smooth scroll for thought event logs",
+                                "Responsive layout that works on different screen sizes",
+                                "Typecheck passes",
+                                "Verify in browser"
+                            ],
+                            "priority": 8,
+                            "passes": true,
+                            "notes": "Implemented with custom CSS, spinner animation, and structured HTML log rendering."
+                        },
+                        {
+                            "id": "US-009",
+                            "title": "Add unit tests for tab logic",
+                            "description": "As a developer, I want tests that verify the tab creation and event routing logic.",
+                            "acceptanceCriteria": [
+                                "Test: tab created on first chain_start for new agent",
+                                "Test: events routed to correct agent's log",
+                                "Test: orchestrator status shows correct format",
+                                "Test: clear history resets all tab state",
+                                "All tests pass",
+                                "Typecheck passes"
+                            ],
+                            "priority": 9,
+                            "passes": true,
+                            "notes": "Implemented and verified with pytest unit tests covering creation, routing, and formatting."
+                        }
+                    ]
+                }
+            ]
         }
     ]
 }

@@ -1,50 +1,76 @@
 # Ralph Progress Log
 ---
 
-## 2026-01-20 22:55 - US-001: Update streaming.py to use astream_events
-- **What was implemented:**
-  - Replaced `workflow.astream()` with `workflow.astream_events()` in `backend/src/streaming.py`
-  - Added filtering for `on_chain_start`, `on_tool_start`, `on_chain_end` events
-  - Each event now includes: node name, status, message, timestamp
-  - Preserved backwards compatibility for `triage_report` and `routing` events
-- **Files changed:**
-  - `backend/src/streaming.py` - Complete rewrite to use astream_events API
-  - `backend/tests/test_api_integration.py` - Updated test to mock astream_events instead of astream
+## 2026-01-21 18:34 - US-002: Update Session State for Tabs
+- Session state schema already implemented in US-001 (`agent_tabs` dict with `{created, logs, status, has_new_activity}`)
+- Added defensive check in `frontend/app.py` to prevent duplicate `tab_order` entries during rapid events
+- Edge case handling verified: `.get()` used for missing agents, duplicate check for rapid events
 - **Learnings:**
-  - astream_events returns structured events with metadata containing `langgraph_node` for identifying which agent is running
-  - Event structure: `{event, name, metadata, data}` where data contains input/output
-  - Need to use `version="v2"` for astream_events to get proper event format
+  - Session state management was mostly complete from US-001 scope
+  - Defensive checks important for race conditions in streaming scenarios
 ---
 
-## 2026-01-20 23:18 - US-002: Standardize SSE event format for sub-agent thoughts
-- **What was implemented:**
-  - Backend already emits thought events with `{node, status, message, timestamp}` schema from US-001
-  - Updated `frontend/app.py` to consume new thought event format using `message` field
-  - Added status icons: 🔄 (chain_start), 🔧 (tool_start), ✅ (chain_end)
-- **Files changed:**
-  - `frontend/app.py` - Updated to handle standardized thought event schema with status icons
-- **Verification:**
-  - Tested with Gemini provider at localhost:8501
-  - Confirmed thought events display with correct format and icons
-  - Triage Report renders properly after thoughts
+## 2026-01-21 18:30 - US-001: Add Tab Container Component
+- Implemented tab container using `st.tabs()` with dynamic sub-agent tabs
+- Modified `frontend/app.py`:
+  - Added session state for `agent_tabs` dict and `tab_order` list
+  - Added tab container with Orchestrator as default tab
+  - Dynamic tab creation when sub-agents are called
+  - Events routed to correct tabs (sub-agent logs vs orchestrator thinking)
+  - Updated Clear History to reset tab state
+- **Learnings:**
+  - Streamlit tabs must be created before the streaming loop
+  - Tab order tracked separately from tab state for consistent display
 ---
 
-## 2026-01-20 23:55 - US-003: Add unit tests for streaming functionality
-- **What was implemented:**
-  - Added 9 comprehensive unit tests for `stream_graph_events()` function in `test_streaming.py`
-  - Created `MockWorkflow` class to simulate LangGraph events
-  - Tests cover: on_chain_start, on_tool_start, on_chain_end event filtering
-  - Tests verify: SSE format, skipping non-target events, skipping events without node context
-  - Tests verify: triage_report emission, routing event emission, full workflow simulation
-  - Added `asyncio_mode = auto` to pytest.ini for async test support
-- **Files changed:**
-  - `backend/tests/test_streaming.py` - Added 9 new unit tests for event filtering
-  - `pytest.ini` - Added asyncio_mode = auto
+## 2026-01-21 19:15 - US-003, US-004, US-006: Sub-Agent Tabs & Status
+- Implemented dynamic sub-agent tab creation ('st.tabs' updates on 'rerun').
+- Added status display in Orchestrator tab ('CALLING SUB-AGENT: ...').
+- Verified tabs clear on 'Clear History'.
+- Implemented 'st.rerun()' logic to force UI update when new sub-agents are detected in the stream.
 - **Learnings:**
-  - pytest-asyncio requires `asyncio_mode = auto` in pytest.ini for async tests
-  - MockWorkflow pattern effective for testing async generators
-  - Testing SSE format requires parsing event/data lines from output string
-- **Verification:**
-  - All 49 tests pass
-  - mypy shows no type issues
+  - **Port Conflict**: Local Streamlit development on port 8501 conflicted with a running Docker container. Workaround: Run on port 8502.
+  - **Dynamic Streamlit Tabs**: 'st.tabs()' must be defined at the start. To add tabs dynamically during a streaming interaction, you must update the session state and trigger 'st.rerun()' so the script re-executes.
+---
+
+
+## 2026-01-21 19:22 - US-005: Route thought events to correct tab
+- Implemented timestamp extraction and display in frontend/app.py.
+- Formatted timestamps as HH:MM:SS in sub-agent logs.
+- Verified backend streaming.py already emits ISO timestamps.
+- Refined log entry formatting to include timestamps.
+- **Learnings:**
+  - datetime.fromisoformat handles ISO strings well, but manual Z replacement helps with older Python versions or specific formats.
+  - Browser verification can be flaky if backend/LLM services are unstable (500 errors).
+---
+
+## 2026-01-21 19:44 - US-007: Activity Indicator & Mark Read
+- Implemented green dot  indicator on tabs with new activity.
+- Added 'Mark Read' button inside sub-agent tabs to clear the indicator.
+- Changed default Model Provider to 'Gemini' in frontend to handle missing OpenAI key.
+- **Learnings:**
+  - Streamlit does not expose active tab state easily, so a 'Mark Read' button is a necessary workaround.
+  - Backend crashes if OpenAI key is missing but 'OpenAI' provider is requested. Defaults matter.
+---
+
+## 2026-01-21 20:10 - US-008: Add Styling and Animations
+- Created `frontend/style.css` matching dark theme.
+- Implemented CSS animations for spinner (processing state).
+- Refactored `frontend/app.py` log storage to use structured dicts instead of formatted strings.
+- Implemented HTML/CSS based rendering for logs and status updates to support styling.
+- **Learnings:**
+  - Streamlit's `st.markdown` with `unsafe_allow_html=True` allows for significant UI customization (scrollable containers, CSS animations).
+  - Robust file path handling (`os.path.join(os.path.dirname...)`) is crucial when referencing external assets like CSS in Streamlit apps.
+---
+
+## 2026-01-21 20:35 - US-009: Add Unit Tests for Tab Logic
+- Refactored `frontend/app.py` logic into `frontend/logic.py` for testability.
+- Created `frontend/tests/test_logic.py` covering:
+  - Tab usage and session state initialization.
+  - Event processing (thought events, routing, triage reports).
+  - Timestamp formatting and log entry structure.
+- Ensured 100% pass on new unit tests.
+- **Learnings:**
+  - Separating logic from Streamlit's UI rendering commands makes testing much easier (no need to mock st.session_state extensively).
+  - Explicit typing in tests is required for strict mypy checks.
 ---
