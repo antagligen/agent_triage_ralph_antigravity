@@ -168,6 +168,7 @@ if prompt := st.chat_input("How can I help you troubleshoot?"):
 
                                     if is_subagent:
                                         # Create tab for new sub-agent on first call
+                                        # Defensive check: handle rapid events that may race
                                         if node not in st.session_state.agent_tabs:
                                             st.session_state.agent_tabs[node] = {
                                                 "created": True,
@@ -175,7 +176,9 @@ if prompt := st.chat_input("How can I help you troubleshoot?"):
                                                 "status": "running",
                                                 "has_new_activity": True
                                             }
-                                            st.session_state.tab_order.append(node)
+                                            # Prevent duplicate entries in tab_order
+                                            if node not in st.session_state.tab_order:
+                                                st.session_state.tab_order.append(node)
 
                                         # Update sub-agent status
                                         if status == "chain_start":
