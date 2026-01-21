@@ -52,3 +52,13 @@
   - Streamlit does not expose active tab state easily, so a 'Mark Read' button is a necessary workaround.
   - Backend crashes if OpenAI key is missing but 'OpenAI' provider is requested. Defaults matter.
 ---
+
+## 2026-01-21 20:10 - US-008: Add Styling and Animations
+- Created `frontend/style.css` matching dark theme.
+- Implemented CSS animations for spinner (processing state).
+- Refactored `frontend/app.py` log storage to use structured dicts instead of formatted strings.
+- Implemented HTML/CSS based rendering for logs and status updates to support styling.
+- **Learnings:**
+  - Streamlit's `st.markdown` with `unsafe_allow_html=True` allows for significant UI customization (scrollable containers, CSS animations).
+  - Robust file path handling (`os.path.join(os.path.dirname...)`) is crucial when referencing external assets like CSS in Streamlit apps.
+---

@@ -15,6 +15,17 @@ st.set_page_config(
     layout="wide"
 )
 
+# --- Load Custom CSS ---
+def load_css():
+    css_path = os.path.join(os.path.dirname(__file__), "style.css")
+    try:
+        with open(css_path) as f:
+            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    except FileNotFoundError:
+        st.warning(f"style.css not found at {css_path}")
+
+load_css()
+
 st.title("🤖 Ralph - AI Troubleshooting Agent")
 
 # --- Session State Initialization ---
@@ -128,14 +139,49 @@ for i, agent_name in enumerate(st.session_state.tab_order):
 
         # Show status indicator
         if status == "running":
-            st.info(f"🔄 {display_name} is processing...")
+            st.markdown(f"""
+                <div class="agent-status-running">
+                    <div class="agent-spinner"></div>
+                    {display_name} is processing...
+                </div>
+            """, unsafe_allow_html=True)
         elif status == "complete":
-            st.success(f"✅ {display_name} completed")
+             st.markdown(f"""
+                <div class="agent-status-complete">
+                    ✅ {display_name} completed
+                </div>
+            """, unsafe_allow_html=True)
 
         # Display logs
         if logs:
+            logs_html = ""
             for log in logs:
-                st.markdown(log)
+                # Handle legacy string logs if any (defensive)
+                if isinstance(log, str):
+                    logs_html += f'<div class="log-entry">{log}</div>'
+                else:
+                    # Map status to CSS class
+                    status_slug = log.get('status', 'thought').lower()
+                    status_class = f"log-type-{status_slug}"
+
+                    timestamp_html = f'<span class="log-timestamp">{log["timestamp"]}</span>' if log.get("timestamp") else ''
+
+                    logs_html += f"""
+                    <div class="log-entry {status_class}">
+                        {timestamp_html}
+                        <span class="log-icon">{log["icon"]}</span>
+                        <span class="log-message">{log["message"]}</span>
+                    </div>
+                    """
+
+            st.markdown(f"""
+            <div class="agent-log-wrapper">
+                <div class="agent-log-header">Activity Log</div>
+                <div class="agent-log-container">
+                    {logs_html}
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
         else:
             st.caption("No activity yet.")
 
@@ -234,12 +280,15 @@ if prompt := st.chat_input("How can I help you troubleshoot?"):
 
                                         status_icon = "🔄" if status == "chain_start" else "🔧" if status == "tool_start" else "✅" if status == "chain_end" else "💭"
 
-                                        if formatted_time:
-                                            log_entry = f"`{formatted_time}` {status_icon} **[{status}]**: {message}"
-                                        else:
-                                            log_entry = f"{status_icon} **[{status}]**: {message}"
+                                        # Store structured log entry
+                                        log_entry_data = {
+                                            "timestamp": formatted_time,
+                                            "status": status,
+                                            "icon": status_icon,
+                                            "message": message
+                                        }
 
-                                        st.session_state.agent_tabs[node]["logs"].append(log_entry)
+                                        st.session_state.agent_tabs[node]["logs"].append(log_entry_data)
                                         st.session_state.agent_tabs[node]["has_new_activity"] = True
                                     else:
                                         # Orchestrator events go to the thinking expander

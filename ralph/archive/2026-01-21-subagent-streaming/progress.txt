@@ -1,0 +1,50 @@
+# Ralph Progress Log
+---
+
+## 2026-01-20 22:55 - US-001: Update streaming.py to use astream_events
+- **What was implemented:**
+  - Replaced `workflow.astream()` with `workflow.astream_events()` in `backend/src/streaming.py`
+  - Added filtering for `on_chain_start`, `on_tool_start`, `on_chain_end` events
+  - Each event now includes: node name, status, message, timestamp
+  - Preserved backwards compatibility for `triage_report` and `routing` events
+- **Files changed:**
+  - `backend/src/streaming.py` - Complete rewrite to use astream_events API
+  - `backend/tests/test_api_integration.py` - Updated test to mock astream_events instead of astream
+- **Learnings:**
+  - astream_events returns structured events with metadata containing `langgraph_node` for identifying which agent is running
+  - Event structure: `{event, name, metadata, data}` where data contains input/output
+  - Need to use `version="v2"` for astream_events to get proper event format
+---
+
+## 2026-01-20 23:18 - US-002: Standardize SSE event format for sub-agent thoughts
+- **What was implemented:**
+  - Backend already emits thought events with `{node, status, message, timestamp}` schema from US-001
+  - Updated `frontend/app.py` to consume new thought event format using `message` field
+  - Added status icons: 🔄 (chain_start), 🔧 (tool_start), ✅ (chain_end)
+- **Files changed:**
+  - `frontend/app.py` - Updated to handle standardized thought event schema with status icons
+- **Verification:**
+  - Tested with Gemini provider at localhost:8501
+  - Confirmed thought events display with correct format and icons
+  - Triage Report renders properly after thoughts
+---
+
+## 2026-01-20 23:55 - US-003: Add unit tests for streaming functionality
+- **What was implemented:**
+  - Added 9 comprehensive unit tests for `stream_graph_events()` function in `test_streaming.py`
+  - Created `MockWorkflow` class to simulate LangGraph events
+  - Tests cover: on_chain_start, on_tool_start, on_chain_end event filtering
+  - Tests verify: SSE format, skipping non-target events, skipping events without node context
+  - Tests verify: triage_report emission, routing event emission, full workflow simulation
+  - Added `asyncio_mode = auto` to pytest.ini for async test support
+- **Files changed:**
+  - `backend/tests/test_streaming.py` - Added 9 new unit tests for event filtering
+  - `pytest.ini` - Added asyncio_mode = auto
+- **Learnings:**
+  - pytest-asyncio requires `asyncio_mode = auto` in pytest.ini for async tests
+  - MockWorkflow pattern effective for testing async generators
+  - Testing SSE format requires parsing event/data lines from output string
+- **Verification:**
+  - All 49 tests pass
+  - mypy shows no type issues
+---

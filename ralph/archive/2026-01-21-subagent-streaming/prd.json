@@ -1,0 +1,50 @@
+{
+    "project": "Sub-Agent Thought Streaming",
+    "branchName": "ralph/subagent-streaming",
+    "description": "Stream sub-agent lifecycle events and tool executions to the frontend to improve transparency and user experience. Users should see real-time status updates like 'Checking Infoblox...' and 'Calling tool X'.",
+    "userStories": [
+        {
+            "id": "US-001",
+            "title": "Update streaming.py to use astream_events",
+            "description": "As a developer, I want the backend to capture internal sub-agent events so the frontend can display progress.",
+            "acceptanceCriteria": [
+                "Replace `workflow.astream()` with `workflow.astream_events()` in `backend/src/streaming.py`",
+                "Filter events to capture: on_chain_start (entering sub-agent), on_tool_start (tool being called), on_chain_end (sub-agent finishing)",
+                "Ensure filtered events include agent name and relevant context",
+                "Typecheck passes"
+            ],
+            "priority": 1,
+            "passes": true,
+            "notes": ""
+        },
+        {
+            "id": "US-002",
+            "title": "Standardize SSE event format for sub-agent thoughts",
+            "description": "As a frontend developer, I need a consistent JSON structure for thought events to render them correctly.",
+            "acceptanceCriteria": [
+                "Define JSON schema: {node: string, status: 'chain_start'|'tool_start'|'chain_end', message: string, timestamp: string}",
+                "Update `backend/src/streaming.py` to emit `event: thought` with this schema for sub-agent events",
+                "Verify events are emitted using curl or browser DevTools (check Network tab for SSE stream)",
+                "Typecheck passes"
+            ],
+            "priority": 2,
+            "passes": true,
+            "notes": "Verified 2026-01-20: Thought events emit with standardized schema. Frontend updated to display status icons."
+        },
+        {
+            "id": "US-003",
+            "title": "Add unit tests for streaming functionality",
+            "description": "As a developer, I want tests that verify the streaming logic emits the correct events.",
+            "acceptanceCriteria": [
+                "Add test in `backend/tests/test_streaming.py` to verify event filtering logic",
+                "Mock LangGraph astream_events to simulate on_chain_start, on_tool_start, on_chain_end",
+                "Assert correct SSE format is emitted for each event type",
+                "All tests pass",
+                "Typecheck passes"
+            ],
+            "priority": 3,
+            "passes": true,
+            "notes": "Added 9 unit tests covering: chain_start/tool_start/chain_end filtering, skip non-target events, triage_report emission, routing event, full workflow simulation."
+        }
+    ]
+}

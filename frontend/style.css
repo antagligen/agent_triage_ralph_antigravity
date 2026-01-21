@@ -1,0 +1,121 @@
+/* Custom Tab Styling */
+.stTabs [data-baseweb="tab-list"] {
+    gap: 8px;
+}
+
+.stTabs [data-baseweb="tab"] {
+    height: 50px;
+    white-space: pre-wrap;
+    border-radius: 5px 5px 0 0;
+    padding: 10px 20px;
+    transition: background-color 0.2s;
+}
+
+.stTabs [aria-selected="true"] {
+    background-color: rgba(255, 255, 255, 0.05);
+    border-bottom: 2px solid #FF4B4B; /* Streamlit Red/Primary */
+}
+
+.stTabs [aria-selected="false"]:hover {
+    background-color: rgba(255, 255, 255, 0.02);
+}
+
+/* Spinner Animation */
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+.agent-spinner {
+    border: 3px solid rgba(255, 255, 255, 0.1);
+    border-top: 3px solid #3498db;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 1s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 10px;
+}
+
+/* Status Containers */
+.agent-status-running {
+    color: #3498db;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background-color: rgba(52, 152, 219, 0.1);
+    border-radius: 8px;
+    margin-bottom: 16px;
+    border: 1px solid rgba(52, 152, 219, 0.2);
+}
+
+.agent-status-complete {
+    color: #09ab3b;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background-color: rgba(9, 171, 59, 0.1);
+    border-radius: 8px;
+    margin-bottom: 16px;
+    border: 1px solid rgba(9, 171, 59, 0.2);
+}
+
+/* Log Container with Smooth Scroll */
+.agent-log-wrapper {
+    background-color: #0E1117;
+    border-radius: 8px;
+    border: 1px solid rgba(250, 250, 250, 0.1);
+    overflow: hidden; /* Ensures radius clips content */
+}
+
+.agent-log-header {
+    background-color: rgba(255, 255, 255, 0.05);
+    padding: 8px 12px;
+    font-size: 0.85em;
+    color: #888;
+    border-bottom: 1px solid rgba(250, 250, 250, 0.1);
+    font-family: 'Source Sans Pro', sans-serif;
+}
+
+.agent-log-container {
+    max-height: 500px;
+    overflow-y: auto;
+    padding: 12px;
+    font-family: 'Courier New', monospace;
+    font-size: 0.9em;
+    scroll-behavior: smooth;
+}
+
+/* Log Entries */
+.log-entry {
+    margin-bottom: 6px;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    line-height: 1.5;
+    color: #E0E0E0;
+}
+
+.log-entry:last-child {
+    border-bottom: none;
+}
+
+.log-timestamp {
+    color: #666;
+    margin-right: 8px;
+    font-size: 0.85em;
+    display: inline-block;
+    min-width: 60px;
+}
+
+.log-icon {
+    margin-right: 6px;
+}
+
+/* Log Entry Types */
+.log-type-chain-start { color: #3498db; }
+.log-type-tool-start { color: #eebb00; }
+.log-type-chain-end { color: #09ab3b; }
+.log-type-thought { color: #9e9e9e; }
